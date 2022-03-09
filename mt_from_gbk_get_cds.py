@@ -72,11 +72,12 @@ if __name__ == '__main__':
     cds_file = "out/cds.fasta"
     complete_file = "out/complete.fasta"
     # genbank 文件路径
-    res_dir = "F:\\Hibiscus_sabdariffa\\111"  # 改 改 改
+    genbank_dir_path = "F:\\Hibiscus_sabdariffa\\111"  # 改 改 改
     cds_file_obj = open(cds_file, "w")
     complete_file_obj = open(complete_file, "w")
-    for file in os.listdir(res_dir):
+    for file in os.listdir(genbank_dir_path):
         # print(os.sep)
-        cds_fasta, complete_fasta = get_cds(res_dir + os.sep + file, False)
+        cds_fasta, complete_fasta = get_cds(
+            genbank_dir_path + os.sep + file, False)
         cds_file_obj.write(cds_fasta)
         complete_file_obj.write(complete_fasta)
