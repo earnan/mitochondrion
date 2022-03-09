@@ -1,6 +1,22 @@
-import os
+#!/usr/bin/python3
+# -*- coding : utf-8 -*-
+##########################################################
+#
+#       Filename:   mt_from_gbk_get_cds.py
+#         Author:   yujie
+#    Description:   mt_from_gbk_get_cds.py
+#        Version:   1.0
+#           Time:   2022/03/09 15:21:51
+#  Last Modified:   2022/03/09 15:21:51
+#        Contact:   hi@arcsona.cn
+#        License:   Copyright (C) 2022
+#
+##########################################################
+import argparse
 from Bio import SeqIO
+import os
 import re
+
 parser = argparse.ArgumentParser(add_help=False, usage='\npython3   将fa序列反向互补')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
@@ -29,48 +45,30 @@ optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
 
-def format_fasta(ana, seq, num):
-    """
-    格式化文本为 fasta格式
-    :param ana: 注释信息
-    :param seq: 序列
-    :param num: 序列换行时的字符个数
-    :return: fasta格式文本
-    """
+def format_fasta(note, seq, num):
     format_seq = ""
-    for i, char in enumerate(seq):
+    for index, char in enumerate(seq):
         format_seq += char
-        # if (i + 1) % num == 0:#可以用来换行
+        # if (index + 1) % num == 0:#可以用来换行
         #format_seq += "\n"
-    return ana + format_seq + "\n"
+    return note + format_seq + "\n"
 
 
-def get_cds(gb_file, f_cds):
-    """
-    从 genbank 文件中提取 cds 序列及其完整序列
-    :param gb_file: genbank文件路径
-    :param f_cds: 是否只获取一个 CDS 序列
-    :return: fasta 格式的 CDS 序列， fasta 格式的完整序列 
-    """
-    # 提取完整序列并格式为 fasta
-    gb_seq = SeqIO.read(gb_file, "genbank")
-    # print(gb_seq.seq)
-    complete_seq = str(gb_seq.seq)
-    # print(gb_seq)
-    # print(gb_seq.annotations["accessions"])
+def get_cds(gbk_file, f_cds):
+    seq_record = SeqIO.read(gbk_file, "genbank")
+    # print(seq_record.seq)
+    complete_seq = str(seq_record.seq)
+    # print(seq_record)
+    # print(seq_record.annotations["accessions"])
+    complete_note = ">" + seq_record.id + ":" + \
+        seq_record.annotations["accessions"][0] + \
+        " " + seq_record.description + "\n"
+    complete_fasta = format_fasta(complete_note, complete_seq, 70)  # 70换行本例不采用
+    # print(type(seq_record.features))
 
-    complete_ana = ">" + gb_seq.id + ":" + \
-        gb_seq.annotations["accessions"][0] + " " + gb_seq.description + "\n"
-
-    complete_fasta = format_fasta(complete_ana, complete_seq, 70)
-
-    # print(type(gb_seq.features))
-
-    # 提取 CDS 序列并格式为 fasta
     cds_fasta = ""
-
-    for ele in gb_seq.features:
-        if ele.type == "CDS":  # or ele.type == "gene":
+    for ele in seq_record.features:
+        if ele.type == "CDS":
             # print(ele.qualifiers)
             cds_seq = ""
             tmp_list = []
@@ -79,30 +77,32 @@ def get_cds(gb_file, f_cds):
                 # print(ele1.start)
                 # print(ele1.end)
                 #print(int(re.findall(r'\d+', str(ele1.start))[0]))
-                tmp_list.append(int(re.findall(r'\d+', str(ele1.start))[0]))
-                tmp_list.append(int(re.findall(r'\d+', str(ele1.end))[0]))
+                tmp_list.append(re.findall(r'\d+', str(ele1.start))[0])
+                tmp_list.append(re.findall(r'\d+', str(ele1.end))[0])
                 cds_seq += complete_seq[ele1.start:ele1.end]
-            cds_ana = ">" + gb_seq.id + \
-                " [" + str(tmp_list[0]+1)+".." + str(tmp_list[-1])+"]" + \
+
+            cds_note = ">" + seq_record.id + \
+                " [" + str(int(tmp_list[0])+1)+".." + tmp_list[-1]+"]" + \
                 " [gene=" + ele.qualifiers['gene'][0] + "]" + "\n"
-            print(cds_ana)
-            cds_fasta += format_fasta(cds_ana, cds_seq, 70)
-            if (f_cds):
+            cds_fasta += format_fasta(cds_note, cds_seq, 70)
+            print(cds_note)
+
+            if (f_cds):  # ele有可能是trna,要确保先找到一个cds后才能退出,所以放上面if的下一级
                 break
     return cds_fasta, complete_fasta
 
 
 if __name__ == '__main__':
     # 文件输出路径
-    cds_file = "out/cds.fasta"
-    complete_file = "out/complete.fasta"
+    out_cds_file_path = "F:/Hibiscus_sabdariffa/out/cds.fasta"
+    out_complete_file = "F:/Hibiscus_sabdariffa/out/complete.fasta"
     # genbank 文件路径
-    genbank_dir_path = "F:\\Hibiscus_sabdariffa\\111"  # 改 改 改
-    cds_file_obj = open(cds_file, "w")
-    complete_file_obj = open(complete_file, "w")
+    genbank_dir_path = "F:\\Hibiscus_sabdariffa\\111"
+    out_cds_file_path_obj = open(out_cds_file_path, "w")
+    out_complete_file_obj = open(out_complete_file, "w")
     for file in os.listdir(genbank_dir_path):
         # print(os.sep)
         cds_fasta, complete_fasta = get_cds(
             genbank_dir_path + os.sep + file, False)
-        cds_file_obj.write(cds_fasta)
-        complete_file_obj.write(complete_fasta)
+        out_cds_file_path_obj.write(cds_fasta)
+        out_complete_file_obj.write(complete_fasta)
