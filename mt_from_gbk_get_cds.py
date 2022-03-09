@@ -3,7 +3,7 @@
 ##########################################################
 #
 #       Filename:   mt_from_gbk_get_cds.py
-#         Author:   yujie
+# Original Author:
 #    Description:   mt_from_gbk_get_cds.py
 #        Version:   1.0
 #           Time:   2022/03/09 15:21:51
