@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Time    : 2018\9\20 0020 18:32
-# @Author  : Baimoc
-# @Email   : baimoc@163.com
-# @File    : main.py
+
 import os
 from Bio import SeqIO
 import re
