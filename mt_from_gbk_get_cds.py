@@ -1,7 +1,32 @@
-
 import os
 from Bio import SeqIO
 import re
+parser = argparse.ArgumentParser(add_help=False, usage='\npython3   将fa序列反向互补')
+optional = parser.add_argument_group('可选项')
+required = parser.add_argument_group('必选项')
+optional.add_argument('-i', '--input',
+                      metavar='[xxx.fasta]', help='输入fa文件', type=str, required=False)
+optional.add_argument(
+    '-l', '--lenth', metavar='[基因序列长度]', type=bool, help="有输入文件即可", default='1', required=False)
+
+
+optional.add_argument('-s1', '--seq1',
+                      metavar='[ATG→CAT]', help='DNA反向互补', type=str, required=False)
+optional.add_argument('-s2', '--seq2',
+                      metavar='[CAU→AUG]', help='RNA反向互补', type=str, required=False)
+optional.add_argument('-s3', '--seq3',
+                      metavar='[CAU→ATG]', help='RNA与DNA间反向互补', type=str, required=False)
+optional.add_argument('-s4', '--seq4',
+                      metavar='[U→T]', help='不反向不互补仅替换', type=str, required=False)
+optional.add_argument('-s5', '--seq5',
+                      metavar='[str.upper()]', help='字符串大写', type=str, required=False)
+optional.add_argument('-s6', '--seq6',
+                      metavar='[str.lower()]', help='字符串小写', type=str, required=False)
+
+optional.add_argument('-o', '--output',
+                      metavar='[ir_xxx.fasta]', help='输出反向后的fa文件', type=str, required=False)
+optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
+args = parser.parse_args()
 
 
 def format_fasta(ana, seq, num):
