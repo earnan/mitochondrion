@@ -94,7 +94,10 @@ if __name__ == '__main__':
     missing_gene_dict = {}
     out_log_file_obj.write(
         'gene{0}ATP6{0}ATP8{0}CYTB{0}COX1{0}COX2{0}COX3{0}ND1{0}ND2{0}ND3{0}ND4{0}ND4L{0}ND5{0}ND6\n\n'.format('\t'))
-    for file in os.listdir(genbank_dir_path):
+
+    path_list = os.listdir(genbank_dir_path)
+    path_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
+    for file in path_list:
         # cds_fasta, complete_fasta = get_cds(genbank_dir_path + os.sep + file, False)#另一种写法
         (cds_fasta, complete_fasta, count, file_name, s, gene_name_count_list) = get_cds(
             os.path.join(genbank_dir_path, file), False)
