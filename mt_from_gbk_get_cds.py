@@ -104,8 +104,9 @@ if __name__ == '__main__':
     out_complete_file_obj = open(out_complete_file, "w")
     out_log_file_obj = open("F:/Hibiscus_sabdariffa/out/log", 'w')
     count_dict = {}
+    missing_gene_dict = {}
     out_log_file_obj.write(
-        'gene{0}ATP6{0}ATP8{0}CYTB{0}COX1{0}COX2{0}COX3{0}ND1{0}ND2{0}ND3{0}ND4{0}ND4L{0}ND5{0}ND6\n'.format('\t'))
+        'gene{0}ATP6{0}ATP8{0}CYTB{0}COX1{0}COX2{0}COX3{0}ND1{0}ND2{0}ND3{0}ND4{0}ND4L{0}ND5{0}ND6\n\n'.format('\t'))
     for file in os.listdir(genbank_dir_path):
         # cds_fasta, complete_fasta = get_cds(genbank_dir_path + os.sep + file, False)#另一种写法
         (cds_fasta, complete_fasta, count, file_name, s, gene_name_count_list) = get_cds(
@@ -123,12 +124,15 @@ if __name__ == '__main__':
             else:
                 out_log_file_obj.write('NULL'+'\t')
                 missing_gene_list.append(ele)
+                missing_gene_dict['>'+file.rstrip('.gbk')] = missing_gene_list
         out_log_file_obj.write('\n')
-        [out_log_file_obj.write(tmp) for tmp in missing_gene_list]
+        [out_log_file_obj.write(tmp+'\t') for tmp in missing_gene_list]
         out_log_file_obj.write('\n')
 
     # print(count_dict)
     # out_log_file_obj.write(str(count_dict))
+    print(missing_gene_dict)
+    out_log_file_obj.write(str(missing_gene_dict))
     out_cds_file_path_obj.close()
     out_complete_file_obj.close()
     out_log_file_obj.close()
