@@ -19,7 +19,7 @@ import os
 import re
 
 parser = argparse.ArgumentParser(
-    add_help=False, usage='\npython3   mt_find_cds_cmd.py')
+    add_help=False, usage='\npython3   快速生成查找单基因命令')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--input',
