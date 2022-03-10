@@ -43,7 +43,7 @@ for i in tmp_dict.keys():
     for j in tmp_dict[i]:
         print(j)
         file_output.write(
-            'cp_annotation_one_gene_by_ref_gbk2.pl -i1 fasta/{0}.fasta  -i2 gbk/NC_014809.1.gbk -g {1}'.format(i.lstrip('>'), j))
+            'cp_annotation_one_gene_by_ref_gbk2.pl -i1 fasta/{0}.fasta -i2 gbk/NC_014809.1.gbk -g {1}'.format(i.lstrip('>'), j))
         file_output.write('\n')
 
 file_input.close()
