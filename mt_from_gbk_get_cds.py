@@ -17,30 +17,14 @@ from Bio import SeqIO
 import os
 import re
 
-parser = argparse.ArgumentParser(add_help=False, usage='\npython3   将fa序列反向互补')
+parser = argparse.ArgumentParser(
+    add_help=False, usage='\npython3   mt_from_gbk_get_cds.py')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--input',
-                      metavar='[xxx.fasta]', help='输入fa文件', type=str, required=False)
-optional.add_argument(
-    '-l', '--lenth', metavar='[基因序列长度]', type=bool, help="有输入文件即可", default='1', required=False)
-
-
-optional.add_argument('-s1', '--seq1',
-                      metavar='[ATG→CAT]', help='DNA反向互补', type=str, required=False)
-optional.add_argument('-s2', '--seq2',
-                      metavar='[CAU→AUG]', help='RNA反向互补', type=str, required=False)
-optional.add_argument('-s3', '--seq3',
-                      metavar='[CAU→ATG]', help='RNA与DNA间反向互补', type=str, required=False)
-optional.add_argument('-s4', '--seq4',
-                      metavar='[U→T]', help='不反向不互补仅替换', type=str, required=False)
-optional.add_argument('-s5', '--seq5',
-                      metavar='[str.upper()]', help='字符串大写', type=str, required=False)
-optional.add_argument('-s6', '--seq6',
-                      metavar='[str.lower()]', help='字符串小写', type=str, required=False)
-
+                      metavar='[dir]', help='输入gbk所在目录', type=str, default="F:/Hibiscus_sabdariffa/111", required=False)
 optional.add_argument('-o', '--output',
-                      metavar='[ir_xxx.fasta]', help='输出反向后的fa文件', type=str, required=False)
+                      metavar='[dir]', help='输出的路径', type=str, default="F:/Hibiscus_sabdariffa/out", required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -56,9 +40,11 @@ def format_fasta(note, seq, num):
 
 def get_cds(gbk_file, f_cds):
     seq_record = SeqIO.read(gbk_file, "genbank")
-    # print(seq_record)
+    # print(seq_record.description.split('mitochondrion')[0])#调试处
     complete_seq = str(seq_record.seq)
-    complete_note = ">" + seq_record.id + "\n"
+    complete_note = (">" + seq_record.id + '_' +
+                     (seq_record.description.split('mitochondrion')
+                      [0]).replace(' ', '_')).rstrip('_') + "\n"
     complete_fasta = format_fasta(complete_note, complete_seq, 70)  # 70换行本例不采用
     count = 0
     cds_fasta = ""
@@ -96,13 +82,14 @@ if __name__ == '__main__':
     all_gene_list = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
                      'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
     # 文件输出路径
-    out_cds_file_path = "F:/Hibiscus_sabdariffa/out/cds.fasta"
-    out_complete_file = "F:/Hibiscus_sabdariffa/out/complete.fasta"
+    out_cds_file_path = os.path.join(args.output, 'cds.fasta')
+    out_complete_file = os.path.join(args.output, 'complete.fasta')
+    out_log_file = os.path.join(args.output, 'log')
     # genbank 文件路径
-    genbank_dir_path = "F:\\Hibiscus_sabdariffa\\111"
+    genbank_dir_path = args.input
     out_cds_file_path_obj = open(out_cds_file_path, "w")
     out_complete_file_obj = open(out_complete_file, "w")
-    out_log_file_obj = open("F:/Hibiscus_sabdariffa/out/log", 'w')
+    out_log_file_obj = open(out_log_file, 'w')
     count_dict = {}
     missing_gene_dict = {}
     out_log_file_obj.write(
