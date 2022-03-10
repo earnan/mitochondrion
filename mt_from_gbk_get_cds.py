@@ -58,12 +58,11 @@ def get_cds(gbk_file, f_cds):
     seq_record = SeqIO.read(gbk_file, "genbank")
     # print(seq_record)
     complete_seq = str(seq_record.seq)
-    complete_note = ">" + seq_record.id + ":" + \
-        seq_record.annotations["accessions"][0] + \
-        " " + seq_record.description + "\n"
+    complete_note = ">" + seq_record.id + "\n"
     complete_fasta = format_fasta(complete_note, complete_seq, 70)  # 70换行本例不采用
     count = 0
     cds_fasta = ""
+    gene_name_count_list = []
     for ele in seq_record.features:
         if ele.type == "CDS":
             count += 1
@@ -81,6 +80,7 @@ def get_cds(gbk_file, f_cds):
                 " [" + str(int(tmp_list[0])+1)+".." + tmp_list[-1]+"]" + \
                 " [gene=" + ele.qualifiers['gene'][0] + "]" + \
                 "\n"  # '>'后的格式和已有脚本兼容
+            gene_name_count_list.append(ele.qualifiers['gene'][0])
             cds_fasta += format_fasta(cds_note, cds_seq, 70)
             # print(cds_note.strip())
 
@@ -88,10 +88,13 @@ def get_cds(gbk_file, f_cds):
                 break
     s = '文件{0}有{1}个CDS'.format(os.path.basename(gbk_file), count)
     print(s)
-    return cds_fasta, complete_fasta, count, os.path.basename(gbk_file), s
+    print(gene_name_count_list)
+    return cds_fasta, complete_fasta, count, os.path.basename(gbk_file), s, gene_name_count_list
 
 
 if __name__ == '__main__':
+    all_gene_list = ['COX1', 'ND1', 'ND2', 'ND4L', 'COX2',
+                     'CYTB', 'ATP6', 'ND3', 'ND5', 'ATP8', 'ND4', 'ND6', 'COX3']
     # 文件输出路径
     out_cds_file_path = "F:/Hibiscus_sabdariffa/out/cds.fasta"
     out_complete_file = "F:/Hibiscus_sabdariffa/out/complete.fasta"
@@ -103,9 +106,10 @@ if __name__ == '__main__':
     count_dict = {}
     for file in os.listdir(genbank_dir_path):
         # cds_fasta, complete_fasta = get_cds(genbank_dir_path + os.sep + file, False)#另一种写法
-        (cds_fasta, complete_fasta, count, file_name, s) = get_cds(
+        (cds_fasta, complete_fasta, count, file_name, s, gene_name_count_list) = get_cds(
             os.path.join(genbank_dir_path, file), False)
         count_dict[file_name] = count
+
         out_cds_file_path_obj.write(cds_fasta)
         out_complete_file_obj.write(complete_fasta)
         out_log_file_obj.write(s+'\n')
