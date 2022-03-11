@@ -2,9 +2,9 @@
 # -*- coding : utf-8 -*-
 ##########################################################
 #
-#       Filename:   mt_find_cds_cmd.py
+#       Filename:   mt_generate_cmd.py
 #         Author:   yujie
-#    Description:   mt_find_cds_cmd.py
+#    Description:   mt_generate_cmd.py
 #        Version:   1.0
 #           Time:   2022/03/10 13:49:04
 #  Last Modified:   2022/03/10 13:49:04
