@@ -90,28 +90,39 @@ while (<IN>) {
 	push @{$cds_homo{">".$sid}},[$ncbi,$dis,">".$qid];
 }
 
+print "\n";
+print  %cds_homo;
+print "\n";
 ###############
 my @output;
+my $n=0;
 foreach my $k (keys %cds_homo) {
+	$n=$n+1;
 	my ($NCBI_id,$pos,$gene,$product)=split/\s+/,$k;
 	my ($start,$end)=$pos=~/(\d+)/g;
 	($gene)=$gene=~/gene=(.*?)]/;
 
 	my @fasta=("$k\n".$cds_subject{$k});
 	my $len = $cds_len{$k};
-	print "$k len: $len\n";
+	#print "$k len: $len\n";
 	my %filter;
 	my @homo_group=@{$cds_homo{$k}};
+	
+	#print @homo_group;
+	#print "\n$n\n";
 
 	@homo_group=sort { 
 		$$a[0] cmp $$b[0] 
 		or 
 		$$b[1]<=>$$a[1]} @homo_group;
 
+	#print @homo_group;
+	#print "\n$n\n";
+
 	my @filter_homo=grep {
 		if (!exists $filter{$_->[0]}) {
 			$filter{$_->[0]}=1;
-			print "$_->[0] $_->[1]\n";
+			#print "$_->[0] $_->[1]\n";
 		}
 	}@homo_group;
 

@@ -101,7 +101,7 @@ with open(blastn_tophit_result_path, 'r') as f:
         content = line.split('\t')
 
         (qid, q_length, q_aln_start, q_aln_end, s_length, s_aln_start,
-         s_aln_end, sid) = content[0], int(content[1]), int(content[2]), int(content[3]), int(content[5]), int(content[6]), int(content[7]), content[15]
+         s_aln_end, sid) = content[0], int(content[1]), int(content[2]), int(content[3]), int(content[5]), int(content[6]), int(content[7]), content[15].strip()
         cds_homo[">"+sid] = []
         #print('>{0} len: {1}'.format(sid.strip(), s_length))
         # subject_start_end_list = re.findall(r'\d+', content[15].split()[1])
@@ -111,31 +111,49 @@ with open(blastn_tophit_result_path, 'r') as f:
         #print(q_aln_start > q_aln_end or s_aln_start > s_aln_end or (q_aln_end - q_aln_start + 1) / q_length < 0.6 or (s_aln_end - s_aln_start + 1) / s_length < 0.6)
         if(q_aln_start > q_aln_end or s_aln_start > s_aln_end or (q_aln_end - q_aln_start + 1) / q_length < 0.6 or (s_aln_end - s_aln_start + 1) / s_length < 0.6):
             count_n2 += 1
-            print("skip{}行".format(line_number))
+            # print("skip{}行".format(line_number))
             next
         else:
-            print("当前为{}行 Efficient".format(line_number))
+            #print("当前为{}行 Efficient".format(line_number))
             count_n1 += 1
 
             q_pos = re.findall(r'\d+', qid.split()[1])  # 取位置出来
             q_start, q_end = q_pos[0], q_pos[1]
-            print(q_start, q_end)
+            #print(q_start, q_end)
 
             s_pos = re.findall(r'\d+', sid.split()[1])  # 取位置出来
             s_start, s_end = s_pos[0], s_pos[1]
-            print(s_start, s_end)
+            #print(s_start, s_end)
             dis = len(ref_cds[">"+qid])
-
-            cds_homo[">"+sid].append([qid.split()[0], dis, ">"+qid])
-
+            tmp = (qid.split()[0], dis, ">"+qid)
+            print(tmp)
+            sid_list.append(tmp)
+            cds_homo[">"+sid].append(tmp)
+            print(cds_homo[">"+sid])
     if n == count_n1+count_n2:
-        print(n, count_n1, count_n2)
-        print('==')
+        print('==========', n, count_n1, count_n2)
 
-print(len(cds_homo))
+# print(len(cds_homo))
+print(cds_homo)
 print('StorageCompleted\n')
 
 output = []
+homo_group = []
 for k in cds_homo.keys():
+    fasta = ''
     # print(k)
-    NCBI_id, pos, gene = k.split()[0], k.split()[1], k.split()[2]
+    NCBI_id, pos, gene = k.split()[0], re.findall(
+        r'\d+', k.split()[1]), k.split()[2]
+    #print(NCBI_id, pos, gene)
+    start, end = pos[0], pos[1]
+    gene = gene.split('=')[1].replace("]", '')
+    # print(gene)
+    fasta = (k+'\n'+sample_cds[k])
+    # print(fasta)
+
+    lenth = sample_len[k]  # G1长度
+    # print('{0} len: {1}\n'.format(k, lenth))  # 物种基因情况
+    my_filter = {}
+    homo_group.append(cds_homo[k])
+
+print(homo_group)
