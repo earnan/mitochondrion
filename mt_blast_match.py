@@ -18,7 +18,6 @@ from Bio import SeqIO
 import os
 import re
 
-from sympy import content
 parser = argparse.ArgumentParser(
     add_help=False, usage='\npython3   mt_from_gbk_get_cds.py')
 optional = parser.add_argument_group('可选项')
@@ -31,6 +30,23 @@ optional.add_argument('-o', '--outdir',
                       metavar='[dir]', help='输出的路径', type=str, default="F:\\ref_tre\\gene\\blast", required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
+
+
+def read_fasta_to_dic(infasta):
+    f = open(infasta, 'r')
+    seq_id = ''
+    seq_index = []
+    dict_seq = {}
+    for line in f:
+        if line.startswith('>'):
+            seq_id = line.strip('\n')
+            seq_index.append(line.replace(
+                "\n", "").replace(">", ""))
+            dict_seq[seq_id] = ''
+        else:
+            dict_seq[seq_id] += line.strip('\n')
+    print(len(dict_seq))
+    return dict_seq
 
 
 cmd = "formatdb -i {} -p F -o F".format(args.infile)
@@ -70,4 +86,4 @@ with open(blastn_tophit_result_path, 'r') as f:
         print('{0} {1}'.format(content[0].split()[0], content[1].strip()))
         #query_start_end_list = re.findall(r'\d+', content[0].split()[1])
 
-with open(args.infile, 'r') as f:
+# with open(args.infile, 'r') as f:
