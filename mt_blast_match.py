@@ -58,7 +58,7 @@ blastn_tophit_result_path = os.path.join(
     args.outdir, 'blastn.tophit.result.xls')
 #fi = open(blastn_tophit_result_path, 'r')
 with open(blastn_tophit_result_path, 'r') as f:
-    for i in range(0, 259):
+    for i in range(0, 258):
         f.readline()
     for line in f:
         print(line.strip())
@@ -69,3 +69,5 @@ with open(blastn_tophit_result_path, 'r') as f:
 
         print('{0} {1}'.format(content[0].split()[0], content[1].strip()))
         #query_start_end_list = re.findall(r'\d+', content[0].split()[1])
+
+with open(args.infile, 'r') as f:
