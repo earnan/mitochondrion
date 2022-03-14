@@ -17,6 +17,7 @@ import argparse
 from Bio import SeqIO
 import os
 import re
+createvar = locals()
 
 parser = argparse.ArgumentParser(
     add_help=False, usage='\npython3   mt_from_gbk_get_cds.py')
@@ -81,13 +82,16 @@ sample_cds, sample_len = read_fasta_to_dic(args.infile)
 ref_cds = {}
 ref_len = {}
 ref_cds, ref_len = read_fasta_to_dic(args.ref)
+for i in sample_cds.keys():
+    createvar[i] = []
+    # print(createvar[i])
 print("count finish\n")
 
 
 blastn_tophit_result_path = os.path.join(
     args.outdir, 'blastn.tophit.result.xls')
+cds_homo = {}
 with open(blastn_tophit_result_path, 'r') as f:
-    cds_homo = {}
     for i in range(0, 1):
         f.readline()
     n = 260-1
@@ -102,7 +106,7 @@ with open(blastn_tophit_result_path, 'r') as f:
 
         (qid, q_length, q_aln_start, q_aln_end, s_length, s_aln_start,
          s_aln_end, sid) = content[0], int(content[1]), int(content[2]), int(content[3]), int(content[5]), int(content[6]), int(content[7]), content[15].strip()
-        cds_homo[">"+sid] = []
+        #cds_homo[">"+sid] = []
         #print('>{0} len: {1}'.format(sid.strip(), s_length))
         # subject_start_end_list = re.findall(r'\d+', content[15].split()[1])
 
@@ -114,6 +118,8 @@ with open(blastn_tophit_result_path, 'r') as f:
             # print("skip{}行".format(line_number))
             next
         else:
+            # print(sid)
+            # print(createvar['>'+sid])
             #print("当前为{}行 Efficient".format(line_number))
             count_n1 += 1
 
@@ -125,17 +131,21 @@ with open(blastn_tophit_result_path, 'r') as f:
             s_start, s_end = s_pos[0], s_pos[1]
             #print(s_start, s_end)
             dis = len(ref_cds[">"+qid])
-            tmp = (qid.split()[0], dis, ">"+qid)
-            print(tmp)
-            sid_list.append(tmp)
-            cds_homo[">"+sid].append(tmp)
-            print(cds_homo[">"+sid])
+            tmp = (qid.split()[0], dis, ">"+qid)  # ref信息
+            # print(tmp)
+            # print(createvar(sid))
+            createvar['>'+sid].append(tmp)
+            #print('{0}{1}'.format(sid, len(createvar['>'+sid])))
+
+            cds_homo[">"+sid] = createvar['>'+sid]
+    print(len(cds_homo))
+
     if n == count_n1+count_n2:
         print('==========', n, count_n1, count_n2)
 
 # print(len(cds_homo))
-print(cds_homo)
-print('StorageCompleted\n')
+# print(cds_homo)
+print('Storage Completed\n')
 
 output = []
 homo_group = []
