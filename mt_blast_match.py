@@ -131,7 +131,7 @@ with open(blastn_tophit_result_path, 'r') as f:
             s_start, s_end = s_pos[0], s_pos[1]
             #print(s_start, s_end)
             dis = len(ref_cds[">"+qid])
-            tmp = (qid.split()[0], dis, ">"+qid)  # ref信息
+            tmp = [qid.split()[0], dis, ">"+qid]  # ref信息
             # print(tmp)
             # print(createvar(sid))
             createvar['>'+sid].append(tmp)
@@ -164,6 +164,11 @@ for k in cds_homo.keys():
     lenth = sample_len[k]  # G1长度
     # print('{0} len: {1}\n'.format(k, lenth))  # 物种基因情况
     my_filter = {}
-    homo_group.append(cds_homo[k])
+    homo_group = cds_homo[k]
+    # for i in homo_group:
+    # tmp=
+    homo_group.sort(key=lambda x: x[0])  # 以数组每个元素中的第二个元素排序
 
-print(homo_group)
+    print(homo_group)  # .sort(key=takeSecond))
+    print('{0}{1}'.format(k, len(homo_group)))
+    print
