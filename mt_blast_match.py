@@ -54,6 +54,8 @@ cmd = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/blast_parser.pl -t
 把提及到的序列放一起
 """
 
+#######################################################################################
+
 
 def read_fasta_to_dic(infasta):
     with open(infasta, 'r') as f:
@@ -81,13 +83,13 @@ sample_len = {}
 sample_cds, sample_len = read_fasta_to_dic(args.infile)
 ref_cds = {}
 ref_len = {}
-ref_cds, ref_len = read_fasta_to_dic(args.ref)
+ref_cds, ref_len = read_fasta_to_dic(args.ref)  # >
 for i in sample_cds.keys():
     createvar[i] = []
     # print(createvar[i])
-print("count finish\n")
+print("Count Completed\n")
 
-
+######################################################################################
 blastn_tophit_result_path = os.path.join(
     args.outdir, 'blastn.tophit.result.xls')
 cds_homo = {}
@@ -141,12 +143,12 @@ with open(blastn_tophit_result_path, 'r') as f:
     print(len(cds_homo))
 
     if n == count_n1+count_n2:
-        print('==========', n, count_n1, count_n2)
-
+        print('==', n, count_n1, count_n2)
 # print(len(cds_homo))
 # print(cds_homo)
-print('Storage Completed\n')
+print('Parsing Completed\n')
 
+#########################################################################################
 output = []
 homo_group = []
 for k in cds_homo.keys():
@@ -160,15 +162,15 @@ for k in cds_homo.keys():
     # print(gene)
     fasta = (k+'\n'+sample_cds[k])
     # print(fasta)
-
     lenth = sample_len[k]  # G1长度
-    # print('{0} len: {1}\n'.format(k, lenth))  # 物种基因情况
     my_filter = {}
     homo_group = cds_homo[k]
     # for i in homo_group:
     # tmp=
     homo_group.sort(key=lambda x: x[0])  # 以数组每个元素中的第二个元素排序
-
-    print(homo_group)  # .sort(key=takeSecond))
-    print('{0}{1}'.format(k, len(homo_group)))
-    print
+    # print(homo_group)  # .sort(key=takeSecond))
+    print('{0} len: {1} Total: {2}'.format(
+        k, lenth, 1+len(homo_group)))  # 物种基因情况
+    for i in homo_group:
+        print(i[0], i[1])
+print("Print Completed")

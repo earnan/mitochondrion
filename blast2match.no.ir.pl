@@ -123,6 +123,7 @@ foreach my $k (keys %cds_homo) {
 		if (!exists $filter{$_->[0]}) {
 			$filter{$_->[0]}=1;
 			print "$_->[0] $_->[1]\n";
+			#print"\n1\n";
 		}
 	}@homo_group;
 
