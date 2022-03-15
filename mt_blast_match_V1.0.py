@@ -19,10 +19,6 @@ import os
 import re
 import time
 
-# 格式化成2016-03-20 11:45:39形式
-begin_time = time.time()
-start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-print('Start Time : {}'.format(start_time))
 
 createvar = locals()
 
@@ -38,6 +34,13 @@ optional.add_argument('-o', '--outdir',
                       metavar='[dir]', help='输出的路径', type=str, default="F:\\ref_tre\\gene\\blast", required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
+
+##################################################
+# 格式化成2016-03-20 11:45:39形式
+begin_time = time.time()
+start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+print('Start Time : {}'.format(start_time))
+
 
 cmd = "formatdb -i {} -p F -o F".format(args.infile)
 # print(cmd)
@@ -121,7 +124,7 @@ with open(blastn_tophit_result_path, 'r') as f:
         #print(q_aln_start > q_aln_end or s_aln_start > s_aln_end or (q_aln_end - q_aln_start + 1) / q_length < 0.6 or (s_aln_end - s_aln_start + 1) / s_length < 0.6)
         if(q_aln_start > q_aln_end or s_aln_start > s_aln_end or (q_aln_end - q_aln_start + 1) / q_length < 0.6 or (s_aln_end - s_aln_start + 1) / s_length < 0.6):
             count_n2 += 1
-            # print("skip{}行".format(line_number))
+            print("skip{0}行 {1}".format(line_number, qid))
             next
         else:
             # print(sid)
