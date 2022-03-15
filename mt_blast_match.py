@@ -73,8 +73,8 @@ def read_fasta_to_dic(infasta):
             else:
                 dict_seq[seq_id] += line.strip('\n')
                 dict_len[seq_id] += str(len(line.strip('\n')))
-        print(len(dict_seq))
-        print(len(dict_len))
+    print('{2} Item Quantity: {0} {1}'.format(
+        len(dict_seq), len(dict_len), os.path.basename(infasta)))
     return dict_seq, dict_len
 
 
