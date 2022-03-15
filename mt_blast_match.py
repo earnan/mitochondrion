@@ -198,9 +198,11 @@ for i in cds_homo.keys():
     filename = 'gene{0}.{1}.fasta'.format(n, gene)
     print(filename)
     print(cds_homo[i])
+    # with open(os.path.join(args.outdir,'fasta',filename))
     for j in cds_homo[i]:
+        #fasta = format_fasta(j[2], ref_cds[j[2]], 70)
+        fasta = j[2]+'\n'+ref_cds[j[2]]
 
-        print('{}\n{}'.format(j[2], ref_cds[j[2]]))
 
 print('\n')
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
