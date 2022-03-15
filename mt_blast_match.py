@@ -17,6 +17,13 @@ import argparse
 from Bio import SeqIO
 import os
 import re
+import time
+
+# 格式化成2016-03-20 11:45:39形式
+begin_time = time.time()
+start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+print('Start Time : {}'.format(start_time))
+
 createvar = locals()
 
 parser = argparse.ArgumentParser(
@@ -100,18 +107,15 @@ with open(blastn_tophit_result_path, 'r') as f:
     count_n1 = 0
     count_n2 = 0
     line_number = 1
-
     for line in f:
         line_number += 1
         # print(line.strip())
         content = line.split('\t')
-
         (qid, q_length, q_aln_start, q_aln_end, s_length, s_aln_start,
          s_aln_end, sid) = content[0], int(content[1]), int(content[2]), int(content[3]), int(content[5]), int(content[6]), int(content[7]), content[15].strip()
         #cds_homo[">"+sid] = []
         #print('>{0} len: {1}'.format(sid.strip(), s_length))
         # subject_start_end_list = re.findall(r'\d+', content[15].split()[1])
-
         #print('{0} {1}'.format(qid.split()[0], q_length))
         # query_start_end_list = re.findall(r'\d+', content[0].split()[1])
         #print(q_aln_start > q_aln_end or s_aln_start > s_aln_end or (q_aln_end - q_aln_start + 1) / q_length < 0.6 or (s_aln_end - s_aln_start + 1) / s_length < 0.6)
@@ -124,11 +128,9 @@ with open(blastn_tophit_result_path, 'r') as f:
             # print(createvar['>'+sid])
             #print("当前为{}行 Efficient".format(line_number))
             count_n1 += 1
-
             q_pos = re.findall(r'\d+', qid.split()[1])  # 取位置出来
             q_start, q_end = q_pos[0], q_pos[1]
             #print(q_start, q_end)
-
             s_pos = re.findall(r'\d+', sid.split()[1])  # 取位置出来
             s_start, s_end = s_pos[0], s_pos[1]
             #print(s_start, s_end)
@@ -138,12 +140,13 @@ with open(blastn_tophit_result_path, 'r') as f:
             # print(createvar(sid))
             createvar['>'+sid].append(tmp)
             #print('{0}{1}'.format(sid, len(createvar['>'+sid])))
-
             cds_homo[">"+sid] = createvar['>'+sid]
-    print(len(cds_homo))
 
-    if n == count_n1+count_n2:
-        print('==', n, count_n1, count_n2)
+print('Total {} gene'.format(len(cds_homo)))
+if n == count_n1+count_n2:
+    print('== {} {} {}'.format(n, count_n1, count_n2))
+else:
+    print("Please check!")
 # print(len(cds_homo))
 # print(cds_homo)
 print('Parsing Completed\n')
@@ -173,4 +176,30 @@ for k in cds_homo.keys():
         k, lenth, 1+len(homo_group)))  # 物种基因情况
     for i in homo_group:
         print(i[0], i[1])
-print("Print Completed")
+print("Print Completed\n")
+##########################################################################
+
+
+def format_fasta(note, seq, num):
+    format_seq = ""
+    for index, char in enumerate(seq):
+        format_seq += char
+        # if (index + 1) % num == 0:#可以用来换行
+        #format_seq += "\n"
+    return note + format_seq + "\n"
+
+
+# sample_cds ref_cds  存有 >名字  对应 序列
+# cds_homo 存有 MmG1 对应 其他参考的对应基因名字及长度
+n = 0
+for i in cds_homo.keys():
+    n += 1
+    gene = i.split()[2].split('=')[1].rstrip(']')
+    filename = 'gene{0}.{1}.fasta'.format(n, gene)
+    print(filename)
+    print(cds_homo[i])
+
+print('\n')
+end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+print('End Time : {}'.format(end_time))
+print('Already Run {}s'.format(time.time()-begin_time))
