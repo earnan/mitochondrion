@@ -196,15 +196,17 @@ for i in cds_homo.keys():
     n += 1
     gene = i.split()[2].split('=')[1].rstrip(']')
     filename = 'gene{0}.{1}.fasta'.format(n, gene)
-    print(filename)
-    print(cds_homo[i])
-    # with open(os.path.join(args.outdir,'fasta',filename))
-    for j in cds_homo[i]:
-        #fasta = format_fasta(j[2], ref_cds[j[2]], 70)
-        fasta = j[2]+'\n'+ref_cds[j[2]]
+    # print(filename)
+    # print(cds_homo[i])
+    with open(os.path.join(args.outdir, 'fasta', filename), 'w') as f:
+        sample_fasta = i+'\n'+sample_cds[i]+'\n'
+        f.write(sample_fasta)
+        for j in cds_homo[i]:
+            #fasta = format_fasta(j[2], ref_cds[j[2]], 70)
+            ref_fasta = j[2]+'\n'+ref_cds[j[2]]+'\n'
+            f.write(ref_fasta)
 
-
-print('\n')
+# print('\n')
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print('End Time : {}'.format(end_time))
 print('Already Run {}s'.format(time.time()-begin_time))
