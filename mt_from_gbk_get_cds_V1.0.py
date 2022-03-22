@@ -55,11 +55,18 @@ def get_cds(gbk_file, f_cds):
             # print(ele.qualifiers)
             cds_seq = ""
             tmp_list = []
-            # print(ele.location.parts)
+            print(ele.location.parts)
             for ele1 in ele.location.parts:
                 tmp_list.append(re.findall(
                     r'\d+', str(ele1.start))[0])  # 取位置出来
+                print('start_all', re.findall(r'\d+', str(ele1.start)))
+                print('start', re.findall(
+                    r'\d+', str(ele1.start))[0])
+
                 tmp_list.append(re.findall(r'\d+', str(ele1.end))[0])  # 取位置出来
+                print('end_all', re.findall(r'\d+', str(ele1.end)))
+                print('end', re.findall(r'\d+', str(ele1.end))[0])
+
                 cds_seq += complete_seq[ele1.start:ele1.end]
 
             cds_note = ">" + seq_record.id + \
