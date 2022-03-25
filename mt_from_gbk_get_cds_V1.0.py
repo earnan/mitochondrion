@@ -7,7 +7,7 @@
 #    Description:   mt_from_gbk_get_cds.py
 #        Version:   1.0
 #           Time:   2022/03/09 15:21:51
-#  Last Modified:   2022/03/09 15:21:51
+#  Last Modified:   2022/03/25 14:05:51
 #        Contact:   hi@arcsona.cn
 #        License:   Copyright (C) 2022
 #
