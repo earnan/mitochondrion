@@ -112,7 +112,7 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
     return complete_note, seq_id
 
 
-def get_cds_note(ele, complete_seq, seq_id):  # 获取cds的id
+def get_cds_note(ele, complete_seq, seq_id):  # 获取cds的id及序列
     if len(ele.location.parts) == 3:
         tmp_list, cds_seq = merge_sequence(ele, complete_seq)
         cds_note = ">" + seq_id + " [" + tmp_list[0]+".." + tmp_list[1]+';' + tmp_list[2]+".." + tmp_list[3]+';' + \
@@ -131,7 +131,7 @@ def get_cds_note(ele, complete_seq, seq_id):  # 获取cds的id
     return cds_note, cds_seq
 
 
-def get_cds(gbk_file, flag):
+def get_cds(gbk_file, flag):  # 解析gbk文件获取cds
     """完整基因组"""
     seq_record = SeqIO.read(gbk_file, "genbank")
     complete_seq = str(seq_record.seq)
@@ -140,70 +140,66 @@ def get_cds(gbk_file, flag):
     """cds序列"""
     count = 0  # 对cds数量计数
     cds_fasta = ""
-    gene_name_list = []
+    list_gene_name = []  # 统计cds
     for ele in seq_record.features:
         if ele.type == "CDS":
             count += 1
             cds_note, cds_seq = get_cds_note(ele, complete_seq, seq_id)
-            gene_name_list.append(ele.qualifiers['gene'][0])
+            list_gene_name.append(ele.qualifiers['gene'][0])
             cds_fasta += format_fasta(cds_note, cds_seq, 70)
             if (flag):  # ele有可能是trna,要确保先找到一个cds后才能退出,所以放上面if的下一级
                 break
-    s = '文件{0}有{1}个CDS'.format(os.path.basename(gbk_file), count)
+    s = '{0}有{1}个CDS'.format(os.path.basename(gbk_file), count)
     print(s)
-    print(gene_name_list)
-    return cds_fasta, complete_fasta, count, os.path.basename(gbk_file), gene_name_list, s
+    print(list_gene_name)
+    return cds_fasta, complete_fasta, count, os.path.basename(gbk_file), list_gene_name, s
 
 
 if __name__ == '__main__':
-    # 文件输出路径
-    out_cds_file_path = os.path.join(args.output, 'cds.fasta')
-    out_complete_file = os.path.join(args.output, 'complete.fasta')
-    out_log_file = os.path.join(args.output, 'log')
-    # genbank 文件路径
-    genbank_dir_path = args.input
-    out_cds_file_path_obj = open(out_cds_file_path, "w")
-    out_complete_file_obj = open(out_complete_file, "w")
-    out_log_file_obj = open(out_log_file, 'w')
-
-    all_gene_list = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
-                     'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
-    count_dict = {}
-    missing_gene_dict = {}
+    all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
+                           'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+    all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
+                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    dict_file_cds_count = {}  # 每个文件中cds计数
+    dict_missing_gene = {}  # 每个文件中缺失的基因统计
     with open((args.output+os.sep+'log'), 'w') as f_log:
-        f_log.write(
-            'gene{0}ATP6{0}ATP8{0}CYTB{0}COX1{0}COX2{0}COX3{0}ND1{0}ND2{0}ND3{0}ND4{0}ND4L{0}ND5{0}ND6\n\n'.format('\t'))
+        f_log.write('gene{0}atp6{0}atp8{0}cob{0}cox1{0}cox2{0}cox3{0}nad1{0}nad2{0}nad3{0}nad4{0}nad4L{0}nad5{0}nad6\n'.format(
+            '\t'))
+        f_log.write('gene{0}ATP6{0}ATP8{0}CYTB{0}COX1{0}COX2{0}COX3{0}ND1{0}ND2{0}ND3{0}ND4{0}ND4L{0}ND5{0}ND6\n'.format(
+            '\t'))
 
     file_list = os.listdir(args.input)
     file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
     for file in file_list:
-        (cds_fasta, complete_fasta, count, file_name,  gene_name_list, s) = get_cds(
-            os.path.join(genbank_dir_path, file), False)
-        count_dict[file_name] = count
-        with open((args.output+os.sep+file_name.rstrip('.gbk')+'_complete.fasta'), 'w') as f_complete, open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'w') as f_cds, open((args.output+os.sep+'log'), 'w') as f_log:
+        (cds_fasta, complete_fasta, count, file_name,  list_gene_name, s) = get_cds(
+            os.path.join(args.input, file), False)
+        dict_file_cds_count[file_name] = count  # 每个文件中cds计数
+        with open((args.output+os.sep+file_name.rstrip('.gbk')+'_complete.fasta'), 'w') as f_complete, \
+                open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'w') as f_cds, \
+                open((args.output+os.sep+'log'), 'a+') as f_log:
             f_cds.write(cds_fasta)
-            f_complete(complete_fasta)
+            f_complete.write(complete_fasta)
             f_log.write(s+'\n')
             f_log.write('>'+file.rstrip('.gbk')+'\t')
-            missing_gene_list = []
-            for ele in all_gene_list:
-                if ele in gene_name_list:
-                    f_log.write(ele+'\t')
+            list_missing_gene = []
+            for i in range(len(all_gene_list_upper)):
+                if all_gene_list_upper[i] in list_gene_name \
+                        or all_gene_list_upper[i].lower() in list_gene_name \
+                        or all_gene_list_lower[i] in list_gene_name \
+                        or all_gene_list_lower[i].upper() in list_gene_name:
+                    f_log.write(all_gene_list_upper[i]+'\t')
                 else:
                     f_log.write('NULL'+'\t')
-                    missing_gene_list.append(ele)
-                    missing_gene_dict['>' +
-                                      file.rstrip('.gbk')] = missing_gene_list
+                    list_missing_gene.append(all_gene_list_upper[i])  # 缺失的基因
+            print(list_missing_gene)
             f_log.write('\n')
-            [f_log.write(tmp+'\t') for tmp in missing_gene_list]
+            [f_log.write(tmp+'\t') for tmp in list_missing_gene]
             f_log.write('\n')
-
-    # print(count_dict)
-    # out_log_file_obj.write(str(count_dict))
-    print(missing_gene_dict)
-    f_log.write(str(missing_gene_dict))
-    print('Done')
-
+        dict_missing_gene['>'+file.rstrip('.gbk')] = list_missing_gene
+    with open((args.output+os.sep+'log'), 'a+') as f_log:
+        f_log.write(str(dict_missing_gene))
+    print(dict_missing_gene)
+    print('\n')
 
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
