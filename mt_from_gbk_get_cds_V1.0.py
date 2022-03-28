@@ -61,7 +61,7 @@ def ir(s):  # 反向互补
     return c
 
 
-def merge_sequence(ele, complete_seq):  # 合并获取到的序列
+def merge_sequence(ele, complete_seq):  # 合并获取到的序列,用于函数(获取cds)来调用
     cds_seq = ""
     tmp_list = []  # 位置列表
     for ele1 in ele.location.parts:
@@ -131,7 +131,7 @@ def get_cds_note(ele, complete_seq, seq_id):  # 获取cds的id及序列
     return cds_note, cds_seq
 
 
-def get_cds(gbk_file, flag):  # 解析gbk文件获取cds
+def get_cds(gbk_file, flag, dict_gene_len):  # 解析gbk文件获取cds
     """完整基因组"""
     seq_record = SeqIO.read(gbk_file, "genbank")
     complete_seq = str(seq_record.seq)
@@ -143,16 +143,47 @@ def get_cds(gbk_file, flag):  # 解析gbk文件获取cds
     list_gene_name = []  # 统计cds
     for ele in seq_record.features:
         if ele.type == "CDS":
+            # print(ele)
+            # print(ele.qualifiers)
+            #print(3*(len(ele.qualifiers['translation'][0])+1), len(cds_seq))
             count += 1
             cds_note, cds_seq = get_cds_note(ele, complete_seq, seq_id)
-            list_gene_name.append(ele.qualifiers['gene'][0])
             cds_fasta += format_fasta(cds_note, cds_seq, 70)
+
+            gene_name = ele.qualifiers['gene'][0]
+            gene_name = gene_name_standardization(gene_name)
+            list_gene_name.append(gene_name)
+            dict_gene_len[gene_name].append(
+                3*(len(ele.qualifiers['translation'][0])+1))
+
             if (flag):  # ele有可能是trna,要确保先找到一个cds后才能退出,所以放上面if的下一级
                 break
-    s = '{0}有{1}个CDS'.format(os.path.basename(gbk_file), count)
+    file_name = os.path.basename(gbk_file)
+    s = '{0}有{1}个CDS'.format(file_name, count)
     print(s)
     print(list_gene_name)
-    return cds_fasta, complete_fasta, count, os.path.basename(gbk_file), list_gene_name, s
+    return cds_fasta, complete_fasta, count, file_name, list_gene_name, s, dict_gene_len
+
+
+def gene_name_standardization(gene_name):  # 格式化基因名字,可重复使用
+    all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
+                           'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+    all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
+                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    if gene_name.upper() in all_gene_list_upper:
+        gene_name = gene_name.upper()
+    else:
+        i = 0
+        while i < 13:
+            if all_gene_list_lower[i] == gene_name:
+                gene_name = all_gene_list_upper[i]
+                break
+            else:
+                i += 1
+        if i >= 13:
+            print(gene_name)
+            print('WARNING!Please check!')
+    return gene_name
 
 
 if __name__ == '__main__':
@@ -160,6 +191,9 @@ if __name__ == '__main__':
                            'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
     all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
                            'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    dict_gene_len = {}  # 统计每个基因在不同物种中的长度,取平均
+    for i in all_gene_list_upper:
+        dict_gene_len[i] = []
     dict_file_cds_count = {}  # 每个文件中cds计数
     dict_missing_gene = {}  # 每个文件中缺失的基因统计
     with open((args.output+os.sep+'log'), 'w') as f_log:
@@ -171,8 +205,9 @@ if __name__ == '__main__':
     file_list = os.listdir(args.input)
     file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
     for file in file_list:
-        (cds_fasta, complete_fasta, count, file_name,  list_gene_name, s) = get_cds(
-            os.path.join(args.input, file), False)
+        ingbk_path = os.path.join(args.input, file)
+        cds_fasta, complete_fasta, count, file_name,  list_gene_name, s, dict_gene_len = get_cds(
+            ingbk_path, False, dict_gene_len)  # , all_gene_list_upper, all_gene_list_lower)
         dict_file_cds_count[file_name] = count  # 每个文件中cds计数
         with open((args.output+os.sep+file_name.rstrip('.gbk')+'_complete.fasta'), 'w') as f_complete, \
                 open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'w') as f_cds, \
@@ -196,7 +231,7 @@ if __name__ == '__main__':
             [f_log.write(tmp+'\t') for tmp in list_missing_gene]
             f_log.write('\n')
         dict_missing_gene['>'+file.rstrip('.gbk')] = list_missing_gene
-
+    print(dict_gene_len)
     total_ref_gene = 0  # 除了物种1外,其他物种所有cds总数
     for i in dict_file_cds_count.keys():
         total_ref_gene += dict_file_cds_count[i]
