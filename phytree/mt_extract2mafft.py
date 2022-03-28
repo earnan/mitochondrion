@@ -84,6 +84,8 @@ def read_fasta_to_dic3(infasta):  # 适用于带详细位置cds的fa文件
     return dict_seq, dict_len, dict_pos, d_pos
 
 
+if __name__ == '__main__':
+    print(1)
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print('End Time : {}'.format(end_time))
