@@ -43,7 +43,7 @@ begin_time = time.time()
 start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print('Start Time : {}'.format(start_time))
 #################################################################
-
+createvar = locals()
 """模板函数"""
 
 
@@ -85,7 +85,13 @@ def read_fasta_to_dic3(infasta):  # 适用于带详细位置cds的fa文件
 
 
 if __name__ == '__main__':
-    print(1)
+    file_list = os.listdir(args.input)
+
+    for file in file_list:
+        infasta = os.path.join(args.input, file)
+        with open(infasta, 'r') as fi:
+            dict_seq, dict_len, dict_pos, d_pos = read_fasta_to_dic3(infasta)
+
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print('End Time : {}'.format(end_time))
