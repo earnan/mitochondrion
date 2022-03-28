@@ -24,7 +24,12 @@ import time
 createvar = locals()
 
 parser = argparse.ArgumentParser(
-    add_help=False, usage='\npython3   mt_from_gbk_get_cds.py')
+    add_help=False, usage='\n\
+python3   mt_from_gbk_get_cds.py\n\
+根据blast 结果\n\
+输出infile每一行信息\n\
+输出ref对应长度信息\n\
+把提及到的序列放一起')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--infile',
