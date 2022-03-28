@@ -33,8 +33,10 @@ optional.add_argument('-r', '--ref',
                       metavar='[file]', help='ref-cds', type=str, default="F:\\ref_tre\\gene\\feature\\ref.gene.seq", required=False)
 optional.add_argument('-o', '--outdir',
                       metavar='[dir]', help='输出的路径', type=str, default="F:\\ref_tre\\gene\\blast", required=False)
+optional.add_argument('-f', '--flag',
+                      metavar='[bool]', help='是否运行blast,默认否', type=bool, default=False, required=False)
 optional.add_argument('-c', '--checkflag',
-                      metavar='[bool]', help='flag', type=bool, default=False, required=False)
+                      metavar='[bool]', help='是否设定阈值,默认否', type=bool, default=False, required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -44,22 +46,20 @@ begin_time = time.time()
 start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print('Start Time : {}'.format(start_time))
 
+if args.flag:
+    cmd = "formatdb -i {} -p F -o F".format(args.infile)
+    # print(cmd)
+    os.system(cmd)
 
-cmd = "formatdb -i {} -p F -o F".format(args.infile)
-# print(cmd)
-# os.system(cmd)
+    cmd = "blastn -query {0} -db {1} -evalue 1e-5 -outfmt 5 -max_hsps 1 -out {2}/blastn.result.xml -word_size 7".format(
+        args.ref, args.infile, args.outdir)
+    # print(cmd)
+    os.system(cmd)
 
-cmd = "blastn -query {0} -db {1} -evalue 1e-5 -outfmt 5 -max_hsps 1 -out {2}/blastn.result.xml -word_size 7".format(
-    args.ref, args.infile, args.outdir)
-# print(cmd)
-# os.system(cmd)
-
-cmd = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/blast_parser.pl -tophit 1 -topmatch 1 -m 7 {0}/blastn.result.xml > {0}/blastn.tophit.result.xls".format(
-    args.outdir)
-# print(cmd)
-# os.system(cmd)
-xml = SearchIO.parse('/your/xml-path/', 'blast-xml')
-SearchIO.write(xml, '/your/output-path', 'blast-tab')
+    cmd = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/blast_parser.pl -tophit 1 -topmatch 1 -m 7 {0}/blastn.result.xml > {0}/blastn.tophit.result.xls".format(
+        args.outdir)
+    # print(cmd)
+    os.system(cmd)
 
 """
 根据blast 结果
@@ -107,10 +107,23 @@ print("Count Completed\n")
 blastn_tophit_result_path = os.path.join(
     args.outdir, 'blastn.tophit.result.xls')
 cds_homo = {}
+
+# 以二进制方式读取文件,统计换行符个数,即行数
+count = 0
+thefile = open(blastn_tophit_result_path, 'rb')
+while True:
+    buffer = thefile.read(1024 * 8192)
+    if not buffer:
+        break
+    count += buffer.count('\n'.encode())
+thefile.close()
+print('line Total {}'.format(count))
+
+
 with open(blastn_tophit_result_path, 'r') as f:
     for i in range(0, 1):
         f.readline()
-    n = 260-1
+    n = count-1  # n行有用信息
     count_n1 = 0
     count_n2 = 0
     line_number = 1
@@ -177,6 +190,7 @@ print('Parsing Completed\n')
 #########################################################################################
 output = []
 homo_group = []
+n = 0  # 最后写入了多少条序列
 for k in cds_homo.keys():
     fasta = ''
     # print(k)
@@ -195,10 +209,13 @@ for k in cds_homo.keys():
     # tmp=
     homo_group.sort(key=lambda x: x[0])  # 以数组每个元素中的第二个元素排序
     # print(homo_group)  # .sort(key=takeSecond))
+    print('\n')
     print('{0} len: {1} Total: {2}'.format(
-        k, lenth, 1+len(homo_group)))  # 物种基因情况
+        k, lenth, 1+len(homo_group)))  # 物种基因情况,total指包括物种1在内所有物种拥有该基因的物种个数
     for i in homo_group:
         print(i[0], i[1])
+    n += 1+len(homo_group)
+print(count_n1, len(sample_len), n)
 print("Print Completed\n")
 ##########################################################################
 
