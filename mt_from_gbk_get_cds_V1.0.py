@@ -18,6 +18,8 @@ import os
 import re
 import time
 
+from numpy import average
+
 parser = argparse.ArgumentParser(
     add_help=False, usage='\npython3   mt_from_gbk_get_cds.py')
 optional = parser.add_argument_group('可选项')
@@ -162,7 +164,7 @@ def get_cds(gbk_file, flag, dict_gene_len):  # 解析gbk文件获取cds
     s = '{0}有{1}个CDS'.format(file_name, count)
     print(s)
     print(list_gene_name)
-    return cds_fasta, complete_fasta, count, file_name, list_gene_name, s, dict_gene_len
+    return cds_fasta, complete_fasta, count, file_name, list_gene_name, s, dict_gene_len, seq_id
 
 
 def gene_name_standardization(gene_name):  # 格式化基因名字,可重复使用
@@ -204,11 +206,14 @@ if __name__ == '__main__':
 
     file_list = os.listdir(args.input)
     file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
+    # print(file_list)
     for file in file_list:
         ingbk_path = os.path.join(args.input, file)
-        cds_fasta, complete_fasta, count, file_name,  list_gene_name, s, dict_gene_len = get_cds(
+        cds_fasta, complete_fasta, count, file_name,  list_gene_name, s, dict_gene_len, seq_id = get_cds(
             ingbk_path, False, dict_gene_len)  # , all_gene_list_upper, all_gene_list_lower)
-        dict_file_cds_count[file_name] = count  # 每个文件中cds计数
+        # dict_file_cds_count[file_name] = count  # 每个文件中cds计数
+        dict_file_cds_count[seq_id] = count  # 每个文件中cds计数
+
         with open((args.output+os.sep+file_name.rstrip('.gbk')+'_complete.fasta'), 'w') as f_complete, \
                 open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'w') as f_cds, \
                 open((args.output+os.sep+'log'), 'a+') as f_log:
@@ -226,11 +231,12 @@ if __name__ == '__main__':
                 else:
                     f_log.write('NULL'+'\t')
                     list_missing_gene.append(all_gene_list_upper[i])  # 缺失的基因
+                    # print(sum(dict_gene_len[all_gene_list_upper[i]])/len(dict_gene_len[all_gene_list_upper[i]]))
             print(list_missing_gene)
             f_log.write('\n')
             [f_log.write(tmp+'\t') for tmp in list_missing_gene]
             f_log.write('\n')
-        dict_missing_gene['>'+file.rstrip('.gbk')] = list_missing_gene
+        dict_missing_gene['>'+seq_id] = list_missing_gene
     with open((args.output+os.sep+'log'), 'a+') as f_log:
         f_log.write(str(dict_missing_gene))
 
@@ -241,6 +247,20 @@ if __name__ == '__main__':
     print(dict_missing_gene)
     print(2*(total_ref_gene-13))
     print('\n')
+#######################
+    # 用gap构造没有的基因
+    for i in dict_missing_gene.keys():
+        cds_fasta = ''
+        for j in dict_missing_gene[i]:
+            # print(j)
+            ave = round(sum(dict_gene_len[j]) / len(dict_gene_len[j]))
+            cds_note = (i+' [0..0]'+' [gene={}]').format(j)
+            cds_seq = ave*'-'
+            cds_fasta += format_fasta(cds_note, cds_seq, 70)
+        print(cds_fasta)
+        file_name = (i.split('_')[-2]+'_'+i.split('_')[-1]+'.1').lstrip('>')
+        with open(args.output+os.sep+file_name+'_cds.fasta', 'a+') as f_cds:
+            f_cds.write(cds_fasta)
 
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
