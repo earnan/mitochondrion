@@ -196,9 +196,14 @@ if __name__ == '__main__':
             [f_log.write(tmp+'\t') for tmp in list_missing_gene]
             f_log.write('\n')
         dict_missing_gene['>'+file.rstrip('.gbk')] = list_missing_gene
+
+    total_ref_gene = 0  # 除了物种1外,其他物种所有cds总数
+    for i in dict_file_cds_count.keys():
+        total_ref_gene += dict_file_cds_count[i]
     with open((args.output+os.sep+'log'), 'a+') as f_log:
         f_log.write(str(dict_missing_gene))
     print(dict_missing_gene)
+    print(2*(total_ref_gene-13))
     print('\n')
 
 ###############################################################
