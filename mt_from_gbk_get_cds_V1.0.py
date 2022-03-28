@@ -18,8 +18,6 @@ import os
 import re
 import time
 
-from numpy import average
-
 parser = argparse.ArgumentParser(
     add_help=False, usage='\npython3   mt_from_gbk_get_cds.py\n每个物种都生成cds及完整序列2个文件')
 optional = parser.add_argument_group('可选项')
@@ -256,7 +254,8 @@ if __name__ == '__main__':
             cds_fasta = ''
             for j in dict_missing_gene[i]:
                 # print(j)
-                ave = round(sum(dict_gene_len[j]) / len(dict_gene_len[j]))
+                ave = round(sum(dict_gene_len[j]) /
+                            len(dict_gene_len[j]))  # 该基因平均长度
                 cds_note = (i+' [0..0]'+' [gene={}]').format(j)
                 cds_seq = ave*'-'
                 cds_fasta += format_fasta(cds_note, cds_seq, 70)
