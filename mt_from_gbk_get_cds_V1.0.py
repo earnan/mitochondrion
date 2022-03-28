@@ -28,6 +28,8 @@ optional.add_argument('-i', '--input',
                       metavar='[dir]', help='输入gbk所在目录', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\gbk', required=False)
 optional.add_argument('-o', '--output',
                       metavar='[dir]', help='输出的路径,每个物种都生成cds及完整序列2个文件', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\out', required=False)
+optional.add_argument('-c', '--check',
+                      metavar='[bool]', help='是否用GAP构造序列,默认否,使用时-c 1', type=bool, required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -249,18 +251,20 @@ if __name__ == '__main__':
     print('\n')
 #######################
     # 用gap构造没有的基因
-    for i in dict_missing_gene.keys():
-        cds_fasta = ''
-        for j in dict_missing_gene[i]:
-            # print(j)
-            ave = round(sum(dict_gene_len[j]) / len(dict_gene_len[j]))
-            cds_note = (i+' [0..0]'+' [gene={}]').format(j)
-            cds_seq = ave*'-'
-            cds_fasta += format_fasta(cds_note, cds_seq, 70)
-        print(cds_fasta)
-        file_name = (i.split('_')[-2]+'_'+i.split('_')[-1]+'.1').lstrip('>')
-        with open(args.output+os.sep+file_name+'_cds.fasta', 'a+') as f_cds:
-            f_cds.write(cds_fasta)
+    if args.check:
+        for i in dict_missing_gene.keys():
+            cds_fasta = ''
+            for j in dict_missing_gene[i]:
+                # print(j)
+                ave = round(sum(dict_gene_len[j]) / len(dict_gene_len[j]))
+                cds_note = (i+' [0..0]'+' [gene={}]').format(j)
+                cds_seq = ave*'-'
+                cds_fasta += format_fasta(cds_note, cds_seq, 70)
+            print(cds_fasta)
+            file_name = (i.split('_')[-2]+'_' +
+                         i.split('_')[-1]+'.1').lstrip('>')
+            with open(args.output+os.sep+file_name+'_cds.fasta', 'a+') as f_cds:
+                f_cds.write(cds_fasta)
 
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
