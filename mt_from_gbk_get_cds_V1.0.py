@@ -21,13 +21,13 @@ import time
 from numpy import average
 
 parser = argparse.ArgumentParser(
-    add_help=False, usage='\npython3   mt_from_gbk_get_cds.py')
+    add_help=False, usage='\npython3   mt_from_gbk_get_cds.py\n每个物种都生成cds及完整序列2个文件')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--input',
                       metavar='[dir]', help='输入gbk所在目录', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\gbk', required=False)
 optional.add_argument('-o', '--output',
-                      metavar='[dir]', help='输出的路径', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\out', required=False)
+                      metavar='[dir]', help='输出的路径,每个物种都生成cds及完整序列2个文件', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\out', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
