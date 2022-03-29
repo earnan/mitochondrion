@@ -12,7 +12,7 @@
 #        License:   Copyright (C) 2022
 #
 ##########################################################
-from icecream import ic
+#from icecream import ic
 from Bio import SearchIO
 import argparse
 from Bio import SeqIO
@@ -147,27 +147,27 @@ if __name__ == '__main__':
 
     if args.flag:
         #########################################
-        file_list = os.listdir(args.outdir1)
-        file_list.sort()
-        for file in file_list:
-            infasta = os.path.join(args.outdir1, file)
-            cmd = "mafft --auto {0} > {1}/{2}.aln".format(
-                infasta, args.outdir2, file)
-            print(cmd)
-            os.system(cmd)
+        file_list1 = os.listdir(args.outdir1)
+        file_list1.sort()
+        for file1 in file_list1:
+            infasta1 = os.path.join(args.outdir1, file1)
+            cmd1 = "mafft --auto {0} > {1}/{2}.aln".format(
+                infasta1, args.outdir2, file1)
+            print(cmd1)
+            os.system(cmd1)
     #########################################
-        file_list = os.listdir(args.outdir2)
-        file_list.sort()
-        for file in file_list:
-            inaln = os.path.join(args.outdir2, file)
-            cmd = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/fasta2line.pl - i {0} - o {1}/{2}".format(
-                inaln, args.outdir2, file)
-            print(cmd)
-            os.system(cmd)
+        file_list2 = os.listdir(args.outdir2)
+        file_list2.sort()
+        for file2 in file_list2:
+            inaln2 = os.path.join(args.outdir2, file2)
+            cmd2 = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/fasta2line.pl - i {0} - o {1}/{2}".format(
+                inaln2, args.outdir2, file1)
+            print(cmd2)
+            os.system(cmd2)
 
-        cmd = "rm {0}/*.aln".format(args.outdir2)
-        print(cmd)
-        os.system(cmd)
+        cmd3 = "rm {0}/*.aln".format(args.outdir2)
+        print(cmd3)
+        os.system(cmd3)
 
 
 ###############################################################
