@@ -33,8 +33,8 @@ optional.add_argument('-o1', '--outdir1',
                       metavar='[dir]', help='序列提取后存放位置', type=str, default='F:\\ref_tre\\gene\\blast\\fasta', required=False)
 optional.add_argument('-o2', '--outdir2',
                       metavar='[dir]', help='比对好的序列', type=str, default='F:\\ref_tre\\gene\\mafft', required=False)
-optional.add_argument('-c', '--check',
-                      metavar='[bool]', help='是否用GAP构造序列,默认否,使用时-c 1', type=bool, required=False)
+optional.add_argument('-c', '--flag',
+                      metavar='[bool]', help='是否运行mafft,默认否,使用时-c 1', type=bool, required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -44,7 +44,6 @@ begin_time = time.time()
 start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print('Start Time : {}'.format(start_time))
 #################################################################
-createvar = locals()
 """模板函数"""
 
 
@@ -53,7 +52,7 @@ def format_fasta(note, seq, num):
     for index, char in enumerate(seq):
         format_seq += char
         # if (index + 1) % num == 0:#可以用来换行
-        #format_seq += "\n"
+        # format_seq += "\n"
     return note.strip() + "\n" + format_seq + "\n"
 
 
@@ -145,17 +144,31 @@ if __name__ == '__main__':
         filename = 'gene{0}.{1}.fasta'.format(n, i)
         with open(os.path.join(args.outdir1,  filename), 'wb') as f:
             f.write(dict_gene_id_seq[i].encode())
-    # ic(dict_gene_id_seq['ATP8'])
-    # print(dict_gene_id_seq['ATP8'])
 
-"""
-my @ alns = glob("$outdir/*.aln");
+    if args.flag:
+        #########################################
+        file_list = os.listdir(args.outdir1)
+        file_list.sort()
+        for file in file_list:
+            infasta = os.path.join(args.outdir1, file)
+            cmd = "mafft --auto {0} > {1}/{2}.aln".format(
+                infasta, args.outdir2, file)
+            print(cmd)
+            os.system(cmd)
+    #########################################
+        file_list = os.listdir(args.outdir2)
+        file_list.sort()
+        for file in file_list:
+            inaln = os.path.join(args.outdir2, file)
+            cmd = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/fasta2line.pl - i {0} - o {1}/{2}".format(
+                inaln, args.outdir2, file)
+            print(cmd)
+            os.system(cmd)
 
-for my $aln(@alns) {
-	my($gene_id) = basename $aln = ~/(.*).aln/;
-	`perl $Bin/fasta2line.pl - i $aln - o $outdir /$gene_id.fasta`;
-	`rm $aln`;
-"""
+        cmd = "rm {0}/*.aln".format(args.outdir2)
+        print(cmd)
+        os.system(cmd)
+
 
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
