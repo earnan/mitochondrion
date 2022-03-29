@@ -12,6 +12,7 @@
 #        License:   Copyright (C) 2022
 #
 ##########################################################
+from icecream import ic
 from Bio import SearchIO
 import argparse
 from Bio import SeqIO
@@ -28,9 +29,9 @@ optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--input',
                       metavar='[dir]', help='输入cds所在目录', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\out\\cds', required=False)
-optional.add_argument('-o1', '--output1',
+optional.add_argument('-o1', '--outdir1',
                       metavar='[dir]', help='序列提取后存放位置', type=str, default='F:\\ref_tre\\gene\\blast\\fasta', required=False)
-optional.add_argument('-o2', '--output2',
+optional.add_argument('-o2', '--outdir2',
                       metavar='[dir]', help='比对好的序列', type=str, default='F:\\ref_tre\\gene\\mafft', required=False)
 optional.add_argument('-c', '--check',
                       metavar='[bool]', help='是否用GAP构造序列,默认否,使用时-c 1', type=bool, required=False)
@@ -47,50 +48,104 @@ createvar = locals()
 """模板函数"""
 
 
-def read_fasta_to_dic3(infasta):  # 适用于带详细位置cds的fa文件
-    with open(infasta, 'r') as f:
-        seq_id = ''  # 基因名
-        dict_seq = {}  # 基因名-序列
-        dict_len = {}  # 基因名-长度
-        dict_pos = {}  # 基因名-位置,sort()
-        d_pos = {}  # 基因名-位置,未排序
-        for line in f:
-            list_gene_pos = []  # 某基因对应的位置组成的列表 sort
-            l_gene_pos = []
-            list_n = [0]  # 计算同名基因是第几个
-            if line.startswith('>'):
-                seq_id = line.strip('\n').split()[2].split('=')[
-                    1].strip(']')  # 基因名
-                if seq_id in dict_seq.keys():
-                    list_n.append(0)
-                    seq_id = seq_id+'-'+str(len(list_n))  # 基因名+1 ycf1-2形式
-                list_tmp = re.findall(
-                    r'\d+', line.strip('\n').split()[1].lstrip(
-                        '[').rstrip(']'))  # 位置打散成一个个起点或终点
-                [l_gene_pos.append(int(i))
-                 for i in list_tmp]  # 转换成数字,放进l_gene_pos,未排序
-                d_pos[seq_id] = l_gene_pos
+def format_fasta(note, seq, num):
+    format_seq = ""
+    for index, char in enumerate(seq):
+        format_seq += char
+        # if (index + 1) % num == 0:#可以用来换行
+        #format_seq += "\n"
+    return note.strip() + "\n" + format_seq + "\n"
 
-                l_gene_pos.sort()
-                [list_gene_pos.append(i) for i in l_gene_pos]
-                dict_pos[seq_id] = list_gene_pos
-                dict_seq[seq_id] = ''
-                dict_len[seq_id] = ''
+
+def read_fasta_to_dic1(infasta):  # 最简单,针对普通fasta文件 >物种名
+    with open(infasta, 'r') as f:
+        seq_id = ''
+        id_index = []
+        dict_seq = {}
+        for line in f:
+            # 如果是">"开头的，就创建一个key键
+            if line.startswith('>'):
+                seq_id = line.strip('\n')  # ID为键
+                id_index.append(line.replace(
+                    "\n", "").replace(">", ""))  # 顺便创建索引的列表
+                dict_seq[seq_id] = ''  # 有key无value
+            # 如果不是">"开头的，在这个key键下添加value值
             else:
                 dict_seq[seq_id] += line.strip('\n')
-                dict_len[seq_id] += str(len(line.strip('\n')))
-    print('{0} Item Total: {1} {2} {3}'.format(os.path.basename(infasta),
-                                               len(dict_seq), len(dict_len), len(dict_pos)))
-    return dict_seq, dict_len, dict_pos, d_pos
+    print(len(dict_seq))  # 包含说明行序列行的字典结构
+    return dict_seq
+
+
+# 格式化基因名字,可重复使用,首次出现于mt_from_gbk_get_cds.py
+def gene_name_standardization(gene_name):
+    all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
+                           'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+    all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
+                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    if gene_name.upper() in all_gene_list_upper:
+        gene_name = gene_name.upper()
+    else:
+        i = 0
+        while i < 13:
+            if all_gene_list_lower[i] == gene_name:
+                gene_name = all_gene_list_upper[i]
+                break
+            else:
+                i += 1
+        if i >= 13:
+            print(gene_name)
+            print('WARNING!Please check!')
+    return gene_name
 
 
 if __name__ == '__main__':
-    file_list = os.listdir(args.input)
+    all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
+                           'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+    all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
+                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    dict_gene_id_seq = {}
+    for i in all_gene_list_upper:
+        dict_gene_id_seq[i] = ''
 
+    file_list = os.listdir(args.input)
+    file_list.sort()
     for file in file_list:
+        species_id = file.replace('_cds.fasta', '')
+        # ic(species_id)
         infasta = os.path.join(args.input, file)
         with open(infasta, 'r') as fi:
-            dict_seq, dict_len, dict_pos, d_pos = read_fasta_to_dic3(infasta)
+            dict_seq = read_fasta_to_dic1(infasta)
+            for j in dict_seq.keys():
+                gene = j.split()[-1].split('=')[-1].rstrip(']')
+                gene = gene_name_standardization(gene)
+                dict_gene_id_seq[gene] += format_fasta(j, dict_seq[j], 70)
+                # ic(j)
+                """#利用python本身的index函数,不通用,舍去
+                if gene in all_gene_list_upper:
+                    # ic()
+                    n = all_gene_list_upper.index(gene)
+                    ic(n, gene)
+                    dict_gene_id_seq[gene].append([j, dict_seq[j]])
+                elif gene in all_gene_list_lower:
+                    n = all_gene_list_lower.index(gene)
+                    gene = all_gene_list_upper[n]
+                    ic(n, gene)
+                    dict_gene_id_seq[gene].append([j, dict_seq[j]])
+                else:
+                    print('warning {}'.format(gene))
+                    list_warning.append(gene)
+                """
+    all_gene_list_upper = ['COX1', 'ND1', 'ND2', 'ND4L', 'COX2',
+                           'CYTB', 'ATP8', 'ND4', 'ATP6', 'ND3', 'ND5', 'ND6', 'COX3']
+    n = 0
+    for i in all_gene_list_upper:
+        n += 1
+        filename = 'gene{0}.{1}.fasta'.format(n, i)
+        with open(os.path.join(args.outdir1,  filename), 'w') as f:
+            f.write(dict_gene_id_seq[i])
+    ic(dict_gene_id_seq['ATP8'])
+    print(dict_gene_id_seq['ATP8'])
+
 
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())

@@ -45,11 +45,12 @@ optional.add_argument('-c', '--checkflag',
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
-##################################################
+#################################################################
 # 格式化成2016-03-20 11:45:39形式
 begin_time = time.time()
 start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print('Start Time : {}'.format(start_time))
+#################################################################
 
 if args.flag:
     cmd = "formatdb -i {} -p F -o F".format(args.infile)
@@ -251,8 +252,9 @@ for i in cds_homo.keys():
             ref_fasta = j[2]+'\n'+ref_cds[j[2]]+'\n'
             f.write(ref_fasta)
 
-# print('\n')
+###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 print('End Time : {}'.format(end_time))
 print('Already Run {}s'.format(time.time()-begin_time))
-###########
+print('Done')
+###############################################################
