@@ -161,7 +161,7 @@ if __name__ == '__main__':
         for file2 in file_list2:
             inaln2 = os.path.join(args.outdir2, file2)
             cmd2 = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/fasta2line.pl -i {0} -o {1}/{2}".format(
-                inaln2, args.outdir2, file1)
+                inaln2, args.outdir2, file2.rstrip('.aln'))
             print(cmd2)
             os.system(cmd2)
 
