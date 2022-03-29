@@ -135,17 +135,27 @@ if __name__ == '__main__':
                     print('warning {}'.format(gene))
                     list_warning.append(gene)
                 """
-    all_gene_list_upper = ['COX1', 'ND1', 'ND2', 'ND4L', 'COX2',
-                           'CYTB', 'ATP8', 'ND4', 'ATP6', 'ND3', 'ND5', 'ND6', 'COX3']
+    all_gene_list_upper2 = ['COX1', 'ND1', 'ND2', 'ND4L', 'COX2',
+                            'CYTB', 'ATP8', 'ND4', 'ATP6', 'ND3', 'ND5', 'ND6', 'COX3']
+    all_gene_list_lower2 = ['cox1', 'nad1', 'nad2', 'nad4L', 'cox2',
+                            'cob', 'atp8', 'nad4', 'atp6', 'nad3', 'nad5', 'nad6', 'cox3']
     n = 0
-    for i in all_gene_list_upper:
+    for i in all_gene_list_upper2:
         n += 1
         filename = 'gene{0}.{1}.fasta'.format(n, i)
-        with open(os.path.join(args.outdir1,  filename), 'w') as f:
-            f.write(dict_gene_id_seq[i])
-    ic(dict_gene_id_seq['ATP8'])
-    print(dict_gene_id_seq['ATP8'])
+        with open(os.path.join(args.outdir1,  filename), 'wb') as f:
+            f.write(dict_gene_id_seq[i].encode())
+    # ic(dict_gene_id_seq['ATP8'])
+    # print(dict_gene_id_seq['ATP8'])
 
+"""
+my @ alns = glob("$outdir/*.aln");
+
+for my $aln(@alns) {
+	my($gene_id) = basename $aln = ~/(.*).aln/;
+	`perl $Bin/fasta2line.pl - i $aln - o $outdir /$gene_id.fasta`;
+	`rm $aln`;
+"""
 
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
