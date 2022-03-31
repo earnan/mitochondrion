@@ -19,7 +19,10 @@ import re
 import time
 
 parser = argparse.ArgumentParser(
-    add_help=False, usage='\npython3   mt_from_gbk_get_cds.py\n每个物种都生成cds及完整序列2个文件')
+    add_help=False, usage='\n\
+python3\n\
+mt_from_gbk_get_cds.py\n\
+每个物种都生成cds及完整序列2个文件')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--input',
@@ -214,11 +217,11 @@ if __name__ == '__main__':
         # dict_file_cds_count[file_name] = count  # 每个文件中cds计数
         dict_file_cds_count[seq_id] = count  # 每个文件中cds计数
 
-        with open((args.output+os.sep+file_name.rstrip('.gbk')+'_complete.fasta'), 'w') as f_complete, \
-                open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'w') as f_cds, \
+        with open((args.output+os.sep+file_name.rstrip('.gbk')+'_complete.fasta'), 'wb') as f_complete, \
+                open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'wb') as f_cds, \
                 open((args.output+os.sep+'log'), 'a+') as f_log:
-            f_cds.write(cds_fasta)
-            f_complete.write(complete_fasta)
+            f_cds.write(cds_fasta.encode())
+            f_complete.write(complete_fasta.encode())
             f_log.write(s+'\n')
             f_log.write('>'+file.rstrip('.gbk')+'\t')
             list_missing_gene = []
@@ -262,8 +265,8 @@ if __name__ == '__main__':
             print(cds_fasta)
             file_name = (i.split('_')[-2]+'_' +
                          i.split('_')[-1]+'.1').lstrip('>')
-            with open(args.output+os.sep+file_name+'_cds.fasta', 'a+') as f_cds:
-                f_cds.write(cds_fasta)
+            with open(args.output+os.sep+file_name+'_cds.fasta', 'ab+') as f_cds:
+                f_cds.write(cds_fasta.encode())
 
 ###############################################################
 end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
