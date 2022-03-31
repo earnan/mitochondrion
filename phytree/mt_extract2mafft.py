@@ -12,7 +12,7 @@
 #        License:   Copyright (C) 2022
 #
 ##########################################################
-#from icecream import ic
+# from icecream import ic
 from Bio import SearchIO
 import argparse
 from Bio import SeqIO
@@ -33,8 +33,10 @@ optional.add_argument('-o1', '--outdir1',
                       metavar='[dir]', help='序列提取后存放位置', type=str, default='F:\\ref_tre\\gene\\blast\\fasta', required=False)
 optional.add_argument('-o2', '--outdir2',
                       metavar='[dir]', help='比对好的序列', type=str, default='F:\\ref_tre\\gene\\mafft', required=False)
-optional.add_argument('-c', '--flag',
-                      metavar='[bool]', help='是否运行mafft,默认否,使用时-c 1', type=bool, required=False)
+optional.add_argument('-c1', '--flag1',
+                      metavar='[bool]', help='是否运行第一步,默认是,不运行-c1 False', type=bool, default=True, required=False)
+optional.add_argument('-c2', '--flag2',
+                      metavar='[bool]', help='是否运行mafft,默认否,使用时-c2 1', type=bool, required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -98,54 +100,55 @@ def gene_name_standardization(gene_name):
 
 
 if __name__ == '__main__':
-    all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
-                           'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
-    all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
-                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
-    dict_gene_id_seq = {}
-    for i in all_gene_list_upper:
-        dict_gene_id_seq[i] = ''
+    if args.flag1:
+        all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
+                               'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+        all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
+                               'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+        dict_gene_id_seq = {}
+        for i in all_gene_list_upper:
+            dict_gene_id_seq[i] = ''
 
-    file_list = os.listdir(args.input)
-    file_list.sort()
-    for file in file_list:
-        species_id = file.replace('_cds.fasta', '')
-        # ic(species_id)
-        infasta = os.path.join(args.input, file)
-        with open(infasta, 'r') as fi:
-            dict_seq = read_fasta_to_dic1(infasta)
-            for j in dict_seq.keys():
-                gene = j.split()[-1].split('=')[-1].rstrip(']')
-                gene = gene_name_standardization(gene)
-                dict_gene_id_seq[gene] += format_fasta(j, dict_seq[j], 70)
-                # ic(j)
-                """#利用python本身的index函数,不通用,舍去
-                if gene in all_gene_list_upper:
-                    # ic()
-                    n = all_gene_list_upper.index(gene)
-                    ic(n, gene)
-                    dict_gene_id_seq[gene].append([j, dict_seq[j]])
-                elif gene in all_gene_list_lower:
-                    n = all_gene_list_lower.index(gene)
-                    gene = all_gene_list_upper[n]
-                    ic(n, gene)
-                    dict_gene_id_seq[gene].append([j, dict_seq[j]])
-                else:
-                    print('warning {}'.format(gene))
-                    list_warning.append(gene)
-                """
-    all_gene_list_upper2 = ['COX1', 'ND1', 'ND2', 'ND4L', 'COX2',
-                            'CYTB', 'ATP8', 'ND4', 'ATP6', 'ND3', 'ND5', 'ND6', 'COX3']
-    all_gene_list_lower2 = ['cox1', 'nad1', 'nad2', 'nad4L', 'cox2',
-                            'cob', 'atp8', 'nad4', 'atp6', 'nad3', 'nad5', 'nad6', 'cox3']
-    n = 0
-    for i in all_gene_list_upper2:
-        n += 1
-        filename = 'gene{0}.{1}.fasta'.format(n, i)
-        with open(os.path.join(args.outdir1,  filename), 'wb') as f:
-            f.write(dict_gene_id_seq[i].encode())
+        file_list = os.listdir(args.input)
+        file_list.sort()
+        for file in file_list:
+            species_id = file.replace('_cds.fasta', '')
+            # ic(species_id)
+            infasta = os.path.join(args.input, file)
+            with open(infasta, 'r') as fi:
+                dict_seq = read_fasta_to_dic1(infasta)
+                for j in dict_seq.keys():
+                    gene = j.split()[-1].split('=')[-1].rstrip(']')
+                    gene = gene_name_standardization(gene)
+                    dict_gene_id_seq[gene] += format_fasta(j, dict_seq[j], 70)
+                    # ic(j)
+                    """#利用python本身的index函数,不通用,舍去
+                    if gene in all_gene_list_upper:
+                        # ic()
+                        n = all_gene_list_upper.index(gene)
+                        ic(n, gene)
+                        dict_gene_id_seq[gene].append([j, dict_seq[j]])
+                    elif gene in all_gene_list_lower:
+                        n = all_gene_list_lower.index(gene)
+                        gene = all_gene_list_upper[n]
+                        ic(n, gene)
+                        dict_gene_id_seq[gene].append([j, dict_seq[j]])
+                    else:
+                        print('warning {}'.format(gene))
+                        list_warning.append(gene)
+                    """
+        all_gene_list_upper2 = ['COX1', 'ND1', 'ND2', 'ND4L', 'COX2',
+                                'CYTB', 'ATP8', 'ND4', 'ATP6', 'ND3', 'ND5', 'ND6', 'COX3']
+        all_gene_list_lower2 = ['cox1', 'nad1', 'nad2', 'nad4L', 'cox2',
+                                'cob', 'atp8', 'nad4', 'atp6', 'nad3', 'nad5', 'nad6', 'cox3']
+        n = 0
+        for i in all_gene_list_upper2:
+            n += 1
+            filename = 'gene{0}.{1}.fasta'.format(n, i)
+            with open(os.path.join(args.outdir1,  filename), 'wb') as f:
+                f.write(dict_gene_id_seq[i].encode())
 
-    if args.flag:
+    if args.flag2:
         #########################################
         file_list1 = os.listdir(args.outdir1)
         file_list1.sort()
@@ -160,14 +163,15 @@ if __name__ == '__main__':
         file_list2.sort()
         for file2 in file_list2:
             inaln2 = os.path.join(args.outdir2, file2)
+            print(file2.rstrip('.aln'))
             cmd2 = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/fasta2line.pl -i {0} -o {1}/{2}".format(
                 inaln2, args.outdir2, file2.rstrip('.aln'))
             print(cmd2)
             os.system(cmd2)
 
-        cmd3 = "rm {0}/*.aln".format(args.outdir2)
-        print(cmd3)
-        os.system(cmd3)
+        #cmd3 = "rm {0}/*.aln".format(args.outdir2)
+        # print(cmd3)
+        # os.system(cmd3)
 
 
 ###############################################################
