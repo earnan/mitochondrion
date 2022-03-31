@@ -53,7 +53,7 @@ def format_fasta(note, seq, num):
 
 def ir(s):  # 反向互补
     re = s[::-1]  # 字符串反向
-    c = ""  # 定义字符串c接收互补序列
+    c = ""
     for i in re:
         if i == 'A':
             c = c + 'T'
@@ -91,7 +91,6 @@ def merge_sequence(ele, complete_seq):  # 合并获取到的序列,用于函数(
 
 def get_complete_note(seq_record):  # 获取整个完整基因组ID
     seq_id = ''
-    # if seq_record.description.find('chloroplast'):#有bug
     if seq_record.description.split(',')[-2].split()[-1] == 'chloroplast':
         seq_id = seq_record.description.split(
             'chloroplast')[0].replace(' ', '_').rstrip('_')
@@ -100,7 +99,7 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
             seq_id = seq_id
         elif seq_id != name:
             seq_id = seq_id+'_'+name
-        complete_note = ">" + seq_id + "\n"  # chloroplast--叶绿体
+        complete_note = ">" + seq_id + "\n"
     elif seq_record.description.split(',')[-2].split()[-1] == 'mitochondrion':
         seq_id = seq_record.description.split(
             'mitochondrion')[0].replace(' ', '_').rstrip('_')
@@ -109,7 +108,7 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
             seq_id = seq_id
         elif seq_id != name:
             seq_id = seq_id+'_'+name
-        complete_note = ">" + seq_id + "\n"  # mitochondrion--线粒体
+        complete_note = ">" + seq_id + "\n"
     else:
         print('WARNING')
         complete_note = ">" + (seq_record.description.split('chloroplast')
@@ -209,15 +208,13 @@ if __name__ == '__main__':
 
     file_list = os.listdir(args.input)
     file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
-    # print(file_list)
     for file in file_list:
         ingbk_path = os.path.join(args.input, file)
         cds_fasta, complete_fasta, count, file_name,  list_gene_name, s, dict_gene_len, seq_id = get_cds(
-            ingbk_path, False, dict_gene_len)  # , all_gene_list_upper, all_gene_list_lower)
-        # dict_file_cds_count[file_name] = count  # 每个文件中cds计数
+            ingbk_path, False, dict_gene_len)
         dict_file_cds_count[seq_id] = count  # 每个文件中cds计数
 
-        with open((args.output+os.sep+file_name.rstrip('.gbk')+'_complete.fasta'), 'wb') as f_complete, \
+        with open((args.output+os.sep+seq_id+'.fasta'), 'wb') as f_complete, \
                 open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'wb') as f_cds, \
                 open((args.output+os.sep+'log'), 'a+') as f_log:
             f_cds.write(cds_fasta.encode())
@@ -234,7 +231,6 @@ if __name__ == '__main__':
                 else:
                     f_log.write('NULL'+'\t')
                     list_missing_gene.append(all_gene_list_upper[i])  # 缺失的基因
-                    # print(sum(dict_gene_len[all_gene_list_upper[i]])/len(dict_gene_len[all_gene_list_upper[i]]))
             print(list_missing_gene)
             f_log.write('\n')
             [f_log.write(tmp+'\t') for tmp in list_missing_gene]
@@ -250,7 +246,7 @@ if __name__ == '__main__':
     print(dict_missing_gene)
     print(2*(total_ref_gene-13))
     print('\n')
-#######################
+#########################################################
     # 用gap构造没有的基因
     if args.check:
         for i in dict_missing_gene.keys():
