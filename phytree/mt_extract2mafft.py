@@ -34,9 +34,9 @@ optional.add_argument('-o1', '--outdir1',
 optional.add_argument('-o2', '--outdir2',
                       metavar='[dir]', help='比对好的序列', type=str, default='F:\\ref_tre\\gene\\mafft', required=False)
 optional.add_argument('-c1', '--flag1',
-                      metavar='[bool]', help='是否运行第一步,默认是,不运行-c1 False', type=bool, default=True, required=False)
+                      metavar='[bool]', help='run step 1?默认是,不运行则-c1', action='store_false', required=False)
 optional.add_argument('-c2', '--flag2',
-                      metavar='[bool]', help='是否运行mafft,默认否,使用时-c2 1', type=bool, required=False)
+                      metavar='[bool]', help='是否运行mafft?默认否,运行则-c2 ', action='store_true', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
