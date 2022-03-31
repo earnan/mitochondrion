@@ -33,10 +33,10 @@ optional.add_argument('-o1', '--outdir1',
                       metavar='[dir]', help='序列提取后存放位置', type=str, default='F:\\ref_tre\\gene\\blast\\fasta', required=False)
 optional.add_argument('-o2', '--outdir2',
                       metavar='[dir]', help='比对好的序列', type=str, default='F:\\ref_tre\\gene\\mafft', required=False)
-optional.add_argument('-c1', '--flag1',
-                      metavar='[bool]', help='run step 1?默认是,不运行则-c1', action='store_false', required=False)
-optional.add_argument('-c2', '--flag2',
-                      metavar='[bool]', help='是否运行mafft?默认否,运行则-c2 ', action='store_true', required=False)
+optional.add_argument('-c1', '--flag1', help='run step 1?默认是,不运行则-c1',
+                      action='store_false', required=False)
+optional.add_argument('-c2', '--flag2', help='是否运行mafft?默认否,运行则-c2 ',
+                      action='store_true', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -163,7 +163,8 @@ if __name__ == '__main__':
         file_list2.sort()
         for file2 in file_list2:
             inaln2 = os.path.join(args.outdir2, file2)
-            print(file2.rstrip('.aln'))
+            print(file2)
+            print(file2.rstrip('.aln'))  # ??????????????
             cmd2 = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/fasta2line.pl -i {0} -o {1}/{2}".format(
                 inaln2, args.outdir2, file2.rstrip('.aln'))
             print(cmd2)
