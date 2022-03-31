@@ -24,7 +24,8 @@ parser = argparse.ArgumentParser(
     add_help=False, usage='\
 \npython3   mt_extract2mafft.py\n\
 提取同名基因序列\n\
-mafft比对')
+mafft比对\n\
+V1.0串行运行')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--input',
@@ -156,7 +157,7 @@ if __name__ == '__main__':
             infasta1 = os.path.join(args.outdir1, file1)
             cmd1 = "mafft --auto {0} > {1}/{2}.aln".format(
                 infasta1, args.outdir2, file1)
-            print(cmd1)
+            # print(cmd1)
             os.system(cmd1)
     #########################################
         file_list2 = os.listdir(args.outdir2)
@@ -165,12 +166,12 @@ if __name__ == '__main__':
             inaln2 = os.path.join(args.outdir2, file2)
             cmd2 = "perl /share/nas6/xul/program/mt2/phytree/gene_tree/src/fasta2line.pl -i {0} -o {1}/{2}".format(
                 inaln2, args.outdir2, file2.replace('.aln', ''))
-            print(cmd2)
+            # print(cmd2)
             os.system(cmd2)
 
-        #cmd3 = "rm {0}/*.aln".format(args.outdir2)
+        cmd3 = "rm {0}/*.aln".format(args.outdir2)
         # print(cmd3)
-        # os.system(cmd3)
+        os.system(cmd3)
 
 
 ###############################################################
