@@ -203,24 +203,29 @@ def gene_name_standardization(gene_name):  # 格式化基因名字,可重复使�
 
 
 if __name__ == '__main__':
-    all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
-                           'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
-    all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
-                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
-    dict_gene_len = {}  # 统计每个基因在不同物种中的长度,取平均
-    for i in all_gene_list_upper:
-        dict_gene_len[i] = []
-    """初始化"""
-    dict_file_cds_count = {}  # 每个文件中cds计数
-    dict_missing_gene = {}  # 每个文件中缺失的基因统计
+
+    """写入统计文件"""
     with open((args.output+os.sep+'log'), 'w') as f_log:
         f_log.write('gene{0}atp6{0}atp8{0}cob{0}cox1{0}cox2{0}cox3{0}nad1{0}nad2{0}nad3{0}nad4{0}nad4L{0}nad5{0}nad6\n'.format(
             '\t'))
         f_log.write('gene{0}ATP6{0}ATP8{0}CYTB{0}COX1{0}COX2{0}COX3{0}ND1{0}ND2{0}ND3{0}ND4{0}ND4L{0}ND5{0}ND6\n'.format(
             '\t'))
+    all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
+                           'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+    all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
+                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    dict_missing_gene = {}  # 每个文件中缺失的基因统计
+    dict_gene_len = {}  # 统计每个基因在不同物种中的长度,取平均
+    for i in all_gene_list_upper:
+        dict_gene_len[i] = []
 
+    """初始化"""
+    dict_file_cds_count = {}  # 每个文件中cds计数
     file_list = os.listdir(args.input)
     file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
+    if os.path.exists(args.output) == False:
+        os.mkdir(args.output)
+
     """主程序"""
     for file in file_list:
         ingbk_path = os.path.join(args.input, file)
@@ -233,6 +238,8 @@ if __name__ == '__main__':
                 open((args.output+os.sep+'log'), 'a+') as f_log:
             f_cds.write(cds_fasta.encode())
             f_complete.write(complete_fasta.encode())
+
+            """以下为统计部分"""
             f_log.write(s+'\n')
             f_log.write('>'+file.rstrip('.gbk')+'\t')
             list_missing_gene = []
