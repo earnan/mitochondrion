@@ -12,11 +12,15 @@
 #        License:   Copyright (C) 2022
 #
 ##########################################################
-import argparse
 from Bio import SeqIO
+from Bio.Seq import Seq
+from icecream import ic
+import argparse
+import linecache
 import os
 import re
 import time
+
 
 parser = argparse.ArgumentParser(
     add_help=False, usage='\n\
@@ -33,13 +37,6 @@ optional.add_argument('-c', '--check',
                       metavar='[bool]', help='是否用GAP构造序列,默认否,使用时-c 1', type=bool, required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
-
-#################################################################
-# 格式化成2016-03-20 11:45:39形式
-begin_time = time.time()
-start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-print('Start Time : {}'.format(start_time))
-#################################################################
 
 
 def format_fasta(note, seq, num):
@@ -110,29 +107,41 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
             seq_id = seq_id+'_'+name
         complete_note = ">" + seq_id + "\n"
     else:
-        print('WARNING')
+        print('WARNING! {}!'.format(
+            seq_record.description.split(', ')[-2].split()[-1]))
         complete_note = ">" + (seq_record.description.split('chloroplast')
                                [0]).replace(' ', '_').rstrip('_') + "\n"
     return complete_note, seq_id
 
 
-def get_cds_note(ele, complete_seq, seq_id):  # 获取cds的id及序列
+def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及序列
+
+    if 'gene' not in ele.qualifiers.keys():
+        # 返回上一个基因,好从其他参考找这个没名字的
+        tmp_gene_name = input(
+            "\nPrevious: {0}. Current: {1}.\nPlease input current gene name:".format(tmp_gene_name, ele.location.parts))
+    else:
+        tmp_gene_name = ele.qualifiers['gene'][0]
+
     if len(ele.location.parts) == 3:
         tmp_list, cds_seq = merge_sequence(ele, complete_seq)
         cds_note = ">" + seq_id + " [" + tmp_list[0]+".." + tmp_list[1]+';' + tmp_list[2]+".." + tmp_list[3]+';' + \
             tmp_list[4]+".." + tmp_list[5]+"]" + " [gene=" + \
-            ele.qualifiers['gene'][0] + "]" + "\n"  # '>'后的格式和已有脚本兼容
+            tmp_gene_name + "]" + "\n"  # '>'后的格式和已有脚本兼容
+
     elif len(ele.location.parts) == 2:
         tmp_list, cds_seq = merge_sequence(ele, complete_seq)
         cds_note = ">" + seq_id + " [" + tmp_list[0]+".." + tmp_list[1]+';' + tmp_list[2]+".." + \
-            tmp_list[3]+"]" + " [gene=" + ele.qualifiers['gene'][0] + \
+            tmp_list[3]+"]" + " [gene=" + tmp_gene_name + \
             "]" + "\n"               # '>'后的格式和已有脚本兼容
+
     elif len(ele.location.parts) == 1:
         tmp_list, cds_seq = merge_sequence(ele, complete_seq)
         cds_note = ">" + seq_id + " [" + tmp_list[0]+".." + tmp_list[1]+"]" + \
-            " [gene=" + ele.qualifiers['gene'][0] + "]" + \
+            " [gene=" + tmp_gene_name + "]" + \
             "\n"    # '>'后的格式和已有脚本兼容
-    return cds_note, cds_seq
+
+    return cds_note, cds_seq, tmp_gene_name
 
 
 def get_cds(gbk_file, flag, dict_gene_len):  # 解析gbk文件获取cds
@@ -145,25 +154,28 @@ def get_cds(gbk_file, flag, dict_gene_len):  # 解析gbk文件获取cds
     count = 0  # 对cds数量计数
     cds_fasta = ""
     list_gene_name = []  # 统计cds
+    tmp_gene_name = ''  # 上一个基因名字,为子函数get_cds_note()准备的
     for ele in seq_record.features:
         if ele.type == "CDS":
-            # print(ele)
-            # print(ele.qualifiers)
-            #print(3*(len(ele.qualifiers['translation'][0])+1), len(cds_seq))
             count += 1
-            cds_note, cds_seq = get_cds_note(ele, complete_seq, seq_id)
+            cds_note, cds_seq, tmp_gene_name = get_cds_note(
+                ele, complete_seq, seq_id, tmp_gene_name)
+            # list_gene_name.append(tmp_gene_name)  # 本次的基因名字 复用,线粒体的话,在下一部分存入列表
             cds_fasta += format_fasta(cds_note, cds_seq, 70)
 
-            gene_name = ele.qualifiers['gene'][0]
+            gene_name = tmp_gene_name
             gene_name = gene_name_standardization(gene_name)
-            list_gene_name.append(gene_name)
+            list_gene_name.append(gene_name)  # 存入列表
             dict_gene_len[gene_name].append(
-                3*(len(ele.qualifiers['translation'][0])+1))
+                3*(len(ele.qualifiers['translation'][0])+1))  # cds序列长度
 
             if (flag):  # ele有可能是trna,要确保先找到一个cds后才能退出,所以放上面if的下一级
                 break
     file_name = os.path.basename(gbk_file)
     s = '{0}有{1}个CDS'.format(file_name, count)
+    if count == 0:
+        s = '-----------------------Warning!!! {0}有{1}个CDS-----------------------\n-----------------------There may be no comments!!!-----------------------'.format(
+            file_name, count)
     print(s)
     print(list_gene_name)
     return cds_fasta, complete_fasta, count, file_name, list_gene_name, s, dict_gene_len, seq_id
@@ -198,6 +210,7 @@ if __name__ == '__main__':
     dict_gene_len = {}  # 统计每个基因在不同物种中的长度,取平均
     for i in all_gene_list_upper:
         dict_gene_len[i] = []
+    """初始化"""
     dict_file_cds_count = {}  # 每个文件中cds计数
     dict_missing_gene = {}  # 每个文件中缺失的基因统计
     with open((args.output+os.sep+'log'), 'w') as f_log:
@@ -208,12 +221,13 @@ if __name__ == '__main__':
 
     file_list = os.listdir(args.input)
     file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
+    """主程序"""
     for file in file_list:
         ingbk_path = os.path.join(args.input, file)
         cds_fasta, complete_fasta, count, file_name,  list_gene_name, s, dict_gene_len, seq_id = get_cds(
             ingbk_path, False, dict_gene_len)
         dict_file_cds_count[seq_id] = count  # 每个文件中cds计数
-
+        """写入文件"""
         with open((args.output+os.sep+seq_id+'.fasta'), 'wb') as f_complete, \
                 open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'wb') as f_cds, \
                 open((args.output+os.sep+'log'), 'a+') as f_log:
@@ -263,10 +277,3 @@ if __name__ == '__main__':
                          i.split('_')[-1]+'.1').lstrip('>')
             with open(args.output+os.sep+file_name+'_cds.fasta', 'ab+') as f_cds:
                 f_cds.write(cds_fasta.encode())
-
-###############################################################
-end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-print('End Time : {}'.format(end_time))
-print('Already Run {}s'.format(time.time()-begin_time))
-print('Done')
-###############################################################
