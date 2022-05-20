@@ -21,11 +21,9 @@ import os
 import re
 import time
 
-
 parser = argparse.ArgumentParser(
     add_help=False, usage='\n\
-python3\n\
-mt_from_gbk_get_cds.py\n\
+python3    mt_from_gbk_get_cds.py\n\
 每个物种都生成cds及完整序列2个文件')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
@@ -88,7 +86,8 @@ def merge_sequence(ele, complete_seq):  # 合并获取到的序列,用于函数(
 
 def get_complete_note(seq_record):  # 获取整个完整基因组ID
     seq_id = ''
-    if seq_record.description.split(',')[-2].split()[-1] == 'chloroplast':
+    # if seq_record.description.find('chloroplast'):#有bug,用str格式化后就没问题了
+    if str(seq_record.description).find('chloroplast') or seq_record.description.split(',')[-2].split()[-1] == 'chloroplast' or seq_record.description.split(',')[-2].split()[-1] == 'plastid':
         seq_id = seq_record.description.split(
             'chloroplast')[0].replace(' ', '_').rstrip('_')
         name = seq_record.name
@@ -217,6 +216,13 @@ def create_gene_by_gap(dict_missing_gene, dict_gene_len, cds_file_path):  # 用g
 
 
 if __name__ == '__main__':
+    #################################################################
+    # 格式化成2016-03-20 11: 45: 39形式
+    begin_time = time.time()
+    start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    print('Start Time : {}'.format(start_time))
+    #################################################################
+    print('\n')
 
     """写入统计文件"""
     with open((args.output+os.sep+'log'), 'w') as f_log:
@@ -288,3 +294,11 @@ if __name__ == '__main__':
     if args.check:
         cds_file_path = args.output+os.sep+file_name+'_cds.fasta'
         create_gene_by_gap(dict_missing_gene, dict_gene_len, cds_file_path)
+
+    print('\n')
+    ###############################################################
+    end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+    print('End Time : {}'.format(end_time))
+    print('Already Run {}s'.format(time.time()-begin_time))
+    print('Done')
+    ###############################################################
