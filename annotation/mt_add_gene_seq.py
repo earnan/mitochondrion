@@ -30,9 +30,11 @@ V1.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--infasta', metavar='[infasta]', help='输入fasta文件', type=str, default='F:/Epipactis_helleborine_FULLCP.fsa', required=False)
+    '-i', '--infasta', metavar='[infasta]', help='输入fasta文件', type=str, default='F:\\4228\\nd06\\ND06127_FULLMT.fsa', required=False)
 optional.add_argument(
-    '-p', '--posstr', metavar='[pos_str]', help="输入位置,形如'124353-124892:-;126001-126552:-'", type=str, default='68847-69098:-;69781-70072:-;71079-71149:-', required=False)
+    '-p', '--posstr', metavar='[pos_str]', help="输入位置,形如'124353-124892:-;126001-126552:-'", type=str, default='14323-1527:+', required=False)
+# default='14323-14352:+;1-1527:+', required=False)
+# default='68847-69098:-;69781-70072:-;71079-71149:-', required=False)
 # 124842-124892:-;126001-126552:-', required=False)
 # 124353-124892:-;126001-126552:-', required=False)
 optional.add_argument(
@@ -64,6 +66,7 @@ def format_pos(pos_str):  # 读取输入的位置为位置列表
         elif ele.split(':')[-1] == '+':
             tmp = ele.split(':')[0]+':'+'1'
             pos_list.append(tmp)
+    # print(pos_list)
     return pos_list
 
 
@@ -83,8 +86,16 @@ def ir(s):  # 反向互补
 
 
 def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下位置顺序
+    # -----------------20220523 解决跨首尾基因
+    seq_len = len(seq)
+    if int(pos_list[0].split(':')[-1]) == 1 and int(pos_list[0].split(':')[0].split('-')[0]) > int(pos_list[0].split(':')[0].split('-')[-1]):  # 14323-1527:1
+        pos1 = '{0}-{1}:1'.format(pos_list[0].split(':')
+                                  [0].split('-')[0], seq_len)
+        pos2 = '1-{}:1'.format(pos_list[0].split(':')[0].split('-')[-1])
+        pos_list = [pos1, pos2]
+    # ------------------
     cds_seq = ""
-    if int(pos_list[0].split(':')[-1]) == -1:
+    if int(pos_list[0].split(':')[-1]) == -1:  # 一般来说,有内含子的基因,几段方向相同,因此只判断第一段,完了重新排序即可
         pos_list = pos_list[::-1]
 
     for ele in pos_list:  # ele 1-10:-1
@@ -102,6 +113,7 @@ def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下�
             # ic('plus')
             cds_seq += seq[start_index:end_index]
             # ic(cds_seq)
+    # print(pos_list)
     return cds_seq, pos_list
 
 #######################################################################################################################
@@ -144,7 +156,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
                 print('\n')
             else:
                 tmp_flag = True
-                print('-----ok')
+                print('------------------------------------------------------------ok')
     return tmp_flag, inter_number
 
 
@@ -152,6 +164,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
 # 如果内部有终止子,则开始尝试返回新的基因位置
 
 def get_new_pos(tmp_pos_list, inter_number):
+    #print('get new pos start')
     # pos_list = []  # 原位置
     # tmp_pos_list = []  # 排序后位置
     # inter_number = 200  # 包括第一个终止子在内的前面所有氨基酸数
@@ -183,6 +196,7 @@ def get_new_pos(tmp_pos_list, inter_number):
         print('\n')
     elif inter_pos <= lenth_list[0]+lenth_list[1]:
         new_pos = 124845  # 124892-(600-552-1)最后一个碱基位置
+    #print('get new pos end')
     return 0
 
 
@@ -191,15 +205,23 @@ def get_new_pos(tmp_pos_list, inter_number):
 
 
 def loop_look(infasta, posstr, flag1, loop_count, maxnumber, n):
+    #print('loop look start')
     seq = read_file(infasta)
     pos_list = format_pos(posstr)
     cds_seq, tmp_pos_list = merge_sequence(pos_list, seq)
-    print(cds_seq)
+    print('\n'+cds_seq)
 
-    if flag1:
+    if flag1:  # 翻译
         tmp_flag, inter_number = trans2acid(cds_seq, n)
         if tmp_flag == True:
-            new_posstr = posstr
+            if len(posstr.split(';')) != len(tmp_pos_list):
+                if len(tmp_pos_list) == 2:
+                    new_posstr = tmp_pos_list[0].replace(
+                        ':1', ':+')+';'+tmp_pos_list[1].replace(':1', ':+')  # 考虑跨首尾
+                else:
+                    new_posstr = tmp_pos_list
+            else:
+                new_posstr = posstr
             print(new_posstr)
         elif tmp_flag == False:
             loop_count += 1
@@ -210,6 +232,7 @@ def loop_look(infasta, posstr, flag1, loop_count, maxnumber, n):
                 loop_look(infasta, new_posstr, flag1, loop_count, maxnumber, n)
             else:
                 print('{}次查找未有结果,取消第{}次查找'.format(loop_count-1, loop_count))
+    #print('loop look end\n')
     return tmp_pos_list, inter_number
 
 
