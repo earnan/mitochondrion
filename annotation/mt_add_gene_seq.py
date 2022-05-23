@@ -2,12 +2,12 @@
 # -*- coding : utf-8 -*-
 ##########################################################
 #
-#       Filename:   cp_add_gene_seq.py
+#       Filename:   mt_add_gene_seq.py
 #         Author:   yujie
-#    Description:   cp_add_gene_seq.py
+#    Description:   mt_add_gene_seq.py
 #        Version:   1.0
-#           Time:   2022/04/19 13:43:58
-#  Last Modified:   2022/04/19 13:43:58
+#           Time:   2022/05/23 16:35:19
+#  Last Modified:   2022/05/23 16:35:19
 #        Contact:   hi@arcsona.cn
 #        License:   Copyright (C) 2022
 #
@@ -20,9 +20,10 @@ import linecache
 import os
 import re
 import time
+
 parser = argparse.ArgumentParser(
     add_help=False, usage='\
-\npython3   cp_add_gene_seq.py\n\
+\npython3   mt_add_gene_seq.py\n\
 step1\n\
 step2\n\
 V1.0')
@@ -34,6 +35,8 @@ optional.add_argument(
     '-p', '--posstr', metavar='[pos_str]', help="输入位置,形如'124353-124892:-;126001-126552:-'", type=str, default='68847-69098:-;69781-70072:-;71079-71149:-', required=False)
 # 124842-124892:-;126001-126552:-', required=False)
 # 124353-124892:-;126001-126552:-', required=False)
+optional.add_argument(
+    '-n', '--codonnumber', metavar='[codon_number]', help='密码子表', type=int, default=5, required=False)
 optional.add_argument(
     '-m', '--maxnumber', metavar='[max_number]', help='最大递归查找次数', type=int, default=0, required=False)
 optional.add_argument('-f1', '--flag1', help='翻译?默认是,不运行则-c1',
@@ -104,8 +107,13 @@ def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下�
 #######################################################################################################################
 
 
-def trans2acid(cds_seq):  # 翻译成氨基酸,返回是否正确以及第一个终止子在基因序列上的相对位置
-    start_code_table = ['TTG', 'CTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一个终止子在基因序列上的相对位置
+    # start_code_table = ['TTG', 'CTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG'] #11
+    if n == 5:
+        start_code_table = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']  # 5
+    elif n == 2:
+        start_code_table = ['ATT', 'ATC', 'ATA', 'ATG', 'GTG']  # 2
+
     tmp_flag = False
     inter_number = 0
     if len(cds_seq) % 3 == 1:
@@ -114,7 +122,7 @@ def trans2acid(cds_seq):  # 翻译成氨基酸,返回是否正确以及第一个
         print('len(sequence) not a multiple of three! {}=3n+2'.format(len(cds_seq)))
 
     coding_dna = Seq(cds_seq)
-    acid = coding_dna.translate(table=11)
+    acid = coding_dna.translate(table=n)
     print('------------------------------------------------------------')
     print(acid)
 
@@ -182,26 +190,26 @@ def get_new_pos(tmp_pos_list, inter_number):
 # 循环查找
 
 
-def loop_look(infasta, posstr, flag1, n, maxnumber):
+def loop_look(infasta, posstr, flag1, loop_count, maxnumber, n):
     seq = read_file(infasta)
     pos_list = format_pos(posstr)
     cds_seq, tmp_pos_list = merge_sequence(pos_list, seq)
     print(cds_seq)
 
     if flag1:
-        tmp_flag, inter_number = trans2acid(cds_seq)
+        tmp_flag, inter_number = trans2acid(cds_seq, n)
         if tmp_flag == True:
             new_posstr = posstr
             print(new_posstr)
         elif tmp_flag == False:
-            n += 1
-            print('第{}次查找中'.format(n))
+            loop_count += 1
+            print('第{}次查找中'.format(loop_count))
             new_posstr = '124353-124892:-;126001-126552:-'
 
-            if n <= maxnumber:
-                loop_look(infasta, new_posstr, flag1, n, maxnumber)
+            if loop_count <= maxnumber:
+                loop_look(infasta, new_posstr, flag1, loop_count, maxnumber, n)
             else:
-                print('{}次查找未有结果,取消第{}次查找'.format(n-1, n))
+                print('{}次查找未有结果,取消第{}次查找'.format(loop_count-1, loop_count))
     return tmp_pos_list, inter_number
 
 
@@ -214,9 +222,9 @@ if __name__ == '__main__':
     print('Start Time : {}'.format(start_time))
     #################################################################
     """
-    n = 0  # 控制递归次数,在loop_look函数外部定义全局变量
+    loop_count = 0  # 控制递归次数,在loop_look函数外部定义全局变量
     tmp_pos_list, inter_number = loop_look(
-        args.infasta, args.posstr, args.flag1, n, args.maxnumber)
+        args.infasta, args.posstr, args.flag1, loop_count, args.maxnumber, args.codonnumber)
     get_new_pos(tmp_pos_list, inter_number)
     """
     ###############################################################
