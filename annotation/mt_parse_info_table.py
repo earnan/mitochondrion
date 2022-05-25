@@ -31,9 +31,9 @@ V1.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4228\\pyss\\pyss.txt', required=False)
+    '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4228\\nd30052\\nd300.txt', required=False)
 optional.add_argument(
-    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4228\\pyss\\gene.annotation.info', required=False)
+    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4228\\nd30052\\gene.annotation.info', required=False)
 optional.add_argument('-c1', '--flag1', help='run step 1?默认是,不运行则-c1',
                       action='store_false', required=False)
 optional.add_argument('-c2', '--flag2', help='run step 2?默认否,运行则-c2 ',
@@ -74,6 +74,7 @@ def name_mapping(s, table=5):  # 名字映射,第5套密码子,name2
 
 
 def codon_check(codon_str, table=5):  # 第一步,检查cds的起止密码子
+    # 20220525   考虑	ATG/T(AA)形式
     start_codon_list = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
     end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 2 5通用
     start_codon = codon_str.split('/')[0]
@@ -81,7 +82,10 @@ def codon_check(codon_str, table=5):  # 第一步,检查cds的起止密码子
     if start_codon in start_codon_list and end_codon in end_codon_list:
         flag = True
     else:
-        flag = False
+        if end_codon.split('(')[0] in end_codon_list:
+            flag = True
+        else:
+            flag = False
     return flag
 
 
