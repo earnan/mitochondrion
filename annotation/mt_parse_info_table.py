@@ -33,7 +33,7 @@ required = parser.add_argument_group('必选项')
 optional.add_argument(
     '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4228\\nd30052\\nd300.txt', required=False)
 optional.add_argument(
-    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4228\\nd30052\\gene.annotation.info', required=False)
+    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4228\\nd30052\\gene.annotation.info2', required=False)
 optional.add_argument('-c1', '--flag1', help='run step 1?默认是,不运行则-c1',
                       action='store_false', required=False)
 optional.add_argument('-c2', '--flag2', help='run step 2?默认否,运行则-c2 ',
@@ -71,6 +71,12 @@ def name_mapping(s, table=5):  # 名字映射,第5套密码子,name2
     else:
         c = cds_dict[s]
     return c
+
+
+def trna_mapping(name1):  # trna 映射  临时加的子函数   以后有空再写全
+    letter = (re.search(r'[A-Z]', name1.split('-')[0])).group(0)
+    name2 = 'tRNA-'+name_mapping(letter)
+    return name2
 
 
 def codon_check(codon_str, table=5):  # 第一步,检查cds的起止密码子
@@ -145,17 +151,6 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
     for i in trna_list:
         if len(i.split('_')) > 1:
             list_extra_trna.append(i)
-    """输出提示"""
-    """
-    if len(list_missing_cds) > 0:  # 少的cds
-        print(list_missing_cds)
-    if len(list_missing_trna) > 0:  # 少的trna
-        print(list_missing_trna)
-    if len(list_extra_cds) > 0:  # 多的cds
-        print(list_extra_cds)
-    if len(list_extra_trna) > 0:  # 多的trna
-        print(list_extra_trna)
-    """
     return list_missing_cds, list_missing_trna, list_extra_cds, list_extra_trna
 
 
@@ -256,5 +251,5 @@ pw(cds_n+trn_n+rrn_n)
 pw(('{}=13+{}-{}'.format(cds_n, len(list_extra_cds), len(list_missing_cds)),
    list_extra_cds, [gene_lenth_dict[i] for i in list_extra_cds], list_missing_cds))
 pw(('{}=22+{}-{}'.format(trn_n, len(list_extra_trna),                            len(list_missing_trna)),
-   list_extra_trna, [gene_lenth_dict[i] for i in list_extra_trna], list_missing_trna))
+   list_extra_trna, [gene_lenth_dict[i] for i in list_extra_trna], list_missing_trna, [trna_mapping(i) for i in list_missing_trna]))
 pw('--------------------------Step 4 Edit gene name!--------------------------\n--------------------------Step 5 Search rrnl 1&2!--------------------------\n--------------------------Step 6 Search D-loop region!--------------------------')
