@@ -86,7 +86,7 @@ def codon_check(codon_str, table=5):  # 第一步,检查cds的起止密码子
 
 
 def overlap_check(cds_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cds的overlap
-    pw('\n--------------------------Step 2 Check cds overlap!--------------------------')
+    pw('--------------------------Step 2 Check cds overlap!--------------------------')
     for ovl_cds in cds_ovl_dict.keys():
         ovl_cds_index = gene_list.index(ovl_cds)
         if ovl_cds_index+1 >= len(gene_list):
