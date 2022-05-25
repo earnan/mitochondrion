@@ -86,7 +86,7 @@ def codon_check(codon_str, table=5):  # 第一步,检查cds的起止密码子
 
 
 def overlap_check(cds_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cds的overlap
-    print('\n--------------------------Step 2 Check cds overlap!--------------------------')
+    pw('\n--------------------------Step 2 Check cds overlap!--------------------------')
     for ovl_cds in cds_ovl_dict.keys():
         ovl_cds_index = gene_list.index(ovl_cds)
         if ovl_cds_index+1 >= len(gene_list):
@@ -98,7 +98,7 @@ def overlap_check(cds_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cd
             if gene_pos_dict[ovl_cds].split(':')[-1] == '+':  # 如果cds是正链的话
                 start = gene_pos_dict[ovl_cds].split('-')[0]
                 new_end = int(gene_pos_dict[next_gene].split('-')[0])-1
-                print('{} pos may be {}-{}:+ '.format(ovl_cds, start, new_end))
+                pw('{} pos may be {}-{}:+ '.format(ovl_cds, start, new_end))
     return 0
 
 
@@ -232,20 +232,25 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile):
     return cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, gene_lenth_dict, count, tmp_line_number_list
 
 
+def pw(s, out_path=args.outfile):
+    print(s)
+    with open(out_path, 'a') as out_handle:  # 追加写
+        out_handle.write(str(s)+'\n')
+
+
 print('\n')
 cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, gene_lenth_dict, count, tmp_line_number_list = tbl_format_parse()  # 1
-print('\n--------------------------Step 1 Check flag tag!--------------------------')
-print(tmp_line_number_list)
+pw('\n')
+pw('--------------------------Step 1 Check flag tag!--------------------------')
+pw(str(tmp_line_number_list))
 overlap_check(cds_ovl_dict, gene_list, gene_pos_dict)  # 2
-print('\n--------------------------Step 3 Check gene quantity!--------------------------')
+pw('--------------------------Step 3 Check gene quantity!--------------------------')
 list_missing_cds, list_missing_trna, list_extra_cds, list_extra_trna = gene_count_check(
     gene_list)  # 3
-print(cds_n,    trn_n,    rrn_n,    dloop_n)
-print(cds_n+trn_n+rrn_n)
-print('{}=13+{}-{}'.format(cds_n, len(list_extra_cds),
-      len(list_missing_cds)), list_extra_cds, [gene_lenth_dict[i] for i in list_extra_cds], list_missing_cds)
-print('{}=22+{}-{}'.format(trn_n, len(list_extra_trna),
-      len(list_missing_trna)), list_extra_trna, [gene_lenth_dict[i] for i in list_extra_trna], list_missing_trna)
-print('\n--------------------------Step 4 Edit gene name!--------------------------')
-print('--------------------------Step 5 Search rrnl 1&2!--------------------------')
-print('--------------------------Step 6 Search D-loop region!--------------------------')
+pw((cds_n,    trn_n,    rrn_n,    dloop_n))
+pw(cds_n+trn_n+rrn_n)
+pw(('{}=13+{}-{}'.format(cds_n, len(list_extra_cds), len(list_missing_cds)),
+   list_extra_cds, [gene_lenth_dict[i] for i in list_extra_cds], list_missing_cds))
+pw(('{}=22+{}-{}'.format(trn_n, len(list_extra_trna),                            len(list_missing_trna)),
+   list_extra_trna, [gene_lenth_dict[i] for i in list_extra_trna], list_missing_trna))
+pw('--------------------------Step 4 Edit gene name!--------------------------\n--------------------------Step 5 Search rrnl 1&2!--------------------------\n--------------------------Step 6 Search D-loop region!--------------------------')
