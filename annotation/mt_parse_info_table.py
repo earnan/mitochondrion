@@ -86,6 +86,7 @@ def codon_check(codon_str, table=5):  # 第一步,检查cds的起止密码子
 
 
 def overlap_check(cds_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cds的overlap
+    print('\n--------------------------Step 2 Check cds overlap!--------------------------')
     for ovl_cds in cds_ovl_dict.keys():
         ovl_cds_index = gene_list.index(ovl_cds)
         if ovl_cds_index+1 >= len(gene_list):
@@ -157,14 +158,16 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
 def tbl_format_parse(in_path=args.infile, out_path=args.outfile):
     with open(in_path, 'r') as in_handle, open(out_path, 'w') as out_handle:
         """计数"""
-        cds_n, trn_n, rrn_n, dloop_n = 0, 0, 0, 0
+        count, cds_n, trn_n, rrn_n, dloop_n = 0, 0, 0, 0, 0
         """跳过第一行"""
         line = in_handle.readline()
         cds_ovl_dict = {}  # 用于存储有overlap的cds
         gene_list = []  # 存储所有基因
         gene_pos_dict = {}  # 存储所有基因及其位置
         gene_lenth_dict = {}  # 存储所有基因长度的字典
+        tmp_line_number_list = []  # 起止密码子有问题的行数
         for line in in_handle:
+            count += 1
             """分割赋值"""
             line_content = line.split('\t')
             name = line_content[0]
@@ -220,21 +223,29 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile):
                     s = '{0}\t{1}-{2}:{3}\t{4}\t{5}'.format(
                         n, start, end, strand, name1, name2)
                 elif flag == False:
+                    tmp_line_number_list.append(count)
                     s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
                         n, start, end, strand, name1, name2, flag)
             """写入"""
             print(s)
             out_handle.write(s+'\n')
-    return cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, gene_lenth_dict
+    return cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, gene_lenth_dict, count, tmp_line_number_list
 
 
-cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, gene_lenth_dict = tbl_format_parse()  # 1
+print('\n')
+cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, gene_lenth_dict, count, tmp_line_number_list = tbl_format_parse()  # 1
+print('\n--------------------------Step 1 Check flag tag!--------------------------')
+print(tmp_line_number_list)
 overlap_check(cds_ovl_dict, gene_list, gene_pos_dict)  # 2
+print('\n--------------------------Step 3 Check gene quantity!--------------------------')
 list_missing_cds, list_missing_trna, list_extra_cds, list_extra_trna = gene_count_check(
     gene_list)  # 3
-
 print(cds_n,    trn_n,    rrn_n,    dloop_n)
+print(cds_n+trn_n+rrn_n)
 print('{}=13+{}-{}'.format(cds_n, len(list_extra_cds),
       len(list_missing_cds)), list_extra_cds, [gene_lenth_dict[i] for i in list_extra_cds], list_missing_cds)
 print('{}=22+{}-{}'.format(trn_n, len(list_extra_trna),
       len(list_missing_trna)), list_extra_trna, [gene_lenth_dict[i] for i in list_extra_trna], list_missing_trna)
+print('\n--------------------------Step 4 Edit gene name!--------------------------')
+print('--------------------------Step 5 Search rrnl 1&2!--------------------------')
+print('--------------------------Step 6 Search D-loop region!--------------------------')
