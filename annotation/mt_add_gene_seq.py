@@ -125,6 +125,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
         start_code_table = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']  # 5
     elif n == 2:
         start_code_table = ['ATT', 'ATC', 'ATA', 'ATG', 'GTG']  # 2
+    end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 2 5通用
 
     tmp_flag = False
     inter_number = 0
@@ -138,17 +139,24 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
     print('------------------------------------------------------------')
     print(acid)
 
-    if not cds_seq[0:3] in start_code_table:
+    if not cds_seq[0:3] in start_code_table:  # 起始不正确
         print('#####start is wrong!')
-    else:
-        if acid.count('*') > 1:
+    else:  # 起始正确,又分3种情况
+        if acid.count('*') > 1:  # 终止多于1,意味着提前终止
             print('#####interior is wrong!')
             inter_number = acid.find('*')
             print(inter_number)
             print('\n')
-        elif acid.count('*') < 1:
-            print('#####end is wrong!')
-        else:
+        elif acid.count('*') < 1:  # 终止小于1 1.真的未终止2.线粒体终止了,共5种细分情况
+            if len(cds_seq) % 3 == 1 and cds_seq[-1] in end_codon_list:
+                print(
+                    '------------------------------------------------------------ok')
+            elif len(cds_seq) % 3 == 2 and cds_seq[-2:] in end_codon_list:
+                print(
+                    '------------------------------------------------------------ok')
+            else:
+                print('#####end is wrong!')
+        else:  # 1个终止子,提前终止或者没问题
             if not acid.endswith('*'):
                 print('#####interior is wrong!')
                 inter_number = acid.find('*')

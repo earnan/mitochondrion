@@ -75,7 +75,7 @@ def name_mapping(s, table=5):  # 名字映射,第5套密码子,name2
 
 def codon_check(codon_str, table=5):  # 第一步,检查cds的起止密码子
     start_codon_list = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
-    end_codon_list = ['TAA', 'TAG', 'TA', 'T']
+    end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 2 5通用
     start_codon = codon_str.split('/')[0]
     end_codon = codon_str.split('/')[-1]
     if start_codon in start_codon_list and end_codon in end_codon_list:
