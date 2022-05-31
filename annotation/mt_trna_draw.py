@@ -43,7 +43,7 @@ optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
 
-# ################################################################读取gene.info文件
+# ########################################################################################读取gene.info文件
 def tbl_format_parse2(in_path=args.infile1, out_path=args.outfile):
     # , open(out_path, 'w') as out_handle:
     with open(in_path, 'r') as in_handle:
@@ -71,7 +71,7 @@ def tbl_format_parse2(in_path=args.infile1, out_path=args.outfile):
                 gene_pos_dict[gene_name] = gene_pos
     return gene_list, gene_pos_dict
 
-# ############################################################################读取fasta进行下一步
+# #######################################################################################读取fasta进行下一步
 
 
 def read_file(infasta):  # 读取文件
@@ -151,9 +151,23 @@ def get_trna_seq(gene_pos_dict, in_path=args.infile2, out_path=args.outfile):
     for i in gene_pos_dict.keys():
         pos_list = format_pos(gene_pos_dict[i])
         cds_seq, pos_list = merge_sequence(pos_list, seq)
+
+        tmp_list = pos_list[0].split(':')[0].split('-')
+        prefix = 'ss-{}-{}-{}'.format(i.split('-')
+                                      [0], tmp_list[0], tmp_list[1])
+        print(prefix)
         print(cds_seq)
+        """	RNAfold  < test.fa  > tmp.fold
+        RNAplot -o svg   < tmp.fold
+        图片改名
+        添加trna-反密码子(对该氨基酸所对应密码子的反向互补
+        /share/nas1/yuj/project/GP-20211206-3816/archive/analysis/annotation/Mm_G1/trna.structure/final_tRNA
+        cd trna.structure/ && nohup perl /share/nas6/xul/program/mt/tRNA/draw_tRNA.pl -i trn*/*.svg
+        svg2xxx -t pdf trnH.svg
+        """
     return 0
 
 
+# #######################################################################################################主函数
 gene_list, gene_pos_dict = tbl_format_parse2()
 get_trna_seq(gene_pos_dict)
