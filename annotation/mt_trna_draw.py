@@ -14,7 +14,7 @@
 ##########################################################
 from Bio import SeqIO
 from Bio.Seq import Seq
-from icecream import ic
+#from icecream import ic
 import argparse
 import linecache
 import os
@@ -32,9 +32,9 @@ optional.add_argument(
     '-i1', '--infile1', metavar='[file]', help='info文件', type=str, default='F:\\4228\\hpl01\\gene.annotation.info', required=False)
 optional.add_argument(
     '-i2', '--infile2', metavar='[file]', help='fasta文件', type=str, default='F:\\4228\\hpl01\\HPL_01_FULLMT.fsa', required=False)
-
 optional.add_argument(
-    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:/', required=False)
+    '-o', '--outdir', metavar='[dir]', help='out目录', type=str, default='F:\\4228\\hpl01\\trna.structure', required=False)
+
 optional.add_argument('-c1', '--flag1', help='run step 1?默认是,不运行则-c1',
                       action='store_false', required=False)
 optional.add_argument('-c2', '--flag2', help='run step 2?默认否,运行则-c2 ',
@@ -44,7 +44,7 @@ args = parser.parse_args()
 
 
 # ########################################################################################读取gene.info文件
-def tbl_format_parse2(in_path=args.infile1, out_path=args.outfile):
+def tbl_format_parse2(in_path=args.infile1):
     # , open(out_path, 'w') as out_handle:
     with open(in_path, 'r') as in_handle:
         """计数"""
@@ -69,6 +69,7 @@ def tbl_format_parse2(in_path=args.infile1, out_path=args.outfile):
 
                 gene_list.append(gene_name)
                 gene_pos_dict[gene_name] = gene_pos
+    print('--------------------------------------------------info done!----------------------------------------------------------------------')
     return gene_list, gene_pos_dict
 
 # #######################################################################################读取fasta进行下一步
@@ -146,7 +147,8 @@ def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下�
     return cds_seq, pos_list
 
 
-def get_trna_seq(gene_pos_dict, in_path=args.infile2, out_path=args.outfile):
+def get_trna_seq(gene_pos_dict, in_path=args.infile2, outdir_path=args.outdir):
+    print('----------------------------------------------------------get seq-----------------------------------------------------------')
     seq = read_file(in_path)
     for i in gene_pos_dict.keys():
         pos_list = format_pos(gene_pos_dict[i])
@@ -155,19 +157,32 @@ def get_trna_seq(gene_pos_dict, in_path=args.infile2, out_path=args.outfile):
         tmp_list = pos_list[0].split(':')[0].split('-')
         prefix = 'ss-{}-{}-{}'.format(i.split('-')
                                       [0], tmp_list[0], tmp_list[1])
-        print(prefix)
-        print(cds_seq)
-        """	RNAfold  < test.fa  > tmp.fold
-        RNAplot -o svg   < tmp.fold
+
+        if not os.path.exists(os.path.join(outdir_path, 'trn')):
+            os.makedirs(os.path.join(outdir_path, 'trn'))  # 多层创建目录
+        outfa_path = os.path.join(outdir_path, 'trn', prefix+'.fa')
+        outfold_path = os.path.join(outdir_path, 'trn', prefix+'.fold')
+        with open(outfa_path, 'wb') as fo:  # 二进制方式
+            fo.write('>{}\n{}\n'.format(prefix, cds_seq).encode())
+        #print('----------------------------------------------run cmd------------------------------------------------------------------------')
+        cmd1 = 'RNAfold  < {}  > {}'.format(outfa_path, outfold_path)
+        os.system(cmd1)
+
+        """
         图片改名
         添加trna-反密码子(对该氨基酸所对应密码子的反向互补
         /share/nas1/yuj/project/GP-20211206-3816/archive/analysis/annotation/Mm_G1/trna.structure/final_tRNA
         cd trna.structure/ && nohup perl /share/nas6/xul/program/mt/tRNA/draw_tRNA.pl -i trn*/*.svg
+        
         svg2xxx -t pdf trnH.svg
         """
+    print('-----------------------------------------------------cmd done---------------------------------------------------------------------------')
     return 0
 
 
 # #######################################################################################################主函数
 gene_list, gene_pos_dict = tbl_format_parse2()
 get_trna_seq(gene_pos_dict)
+
+s = "cd trna.structure/trn && for i in *.fold;do echo $i;RNAplot -o svg < $i;done && rename _ss.svg .svg *.svg && rm *.fa *.fold && cd ../../ && rm *.ps"
+print(s)
