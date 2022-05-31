@@ -86,6 +86,8 @@ def ir(s):  # 反向互补
 
 
 def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下位置顺序
+    """pos_list 某基因格式化的位置"""
+    """seq 全长序列"""
     # -----------------20220523 解决跨首尾基因
     seq_len = len(seq)
     if int(pos_list[0].split(':')[-1]) == 1 and int(pos_list[0].split(':')[0].split('-')[0]) > int(pos_list[0].split(':')[0].split('-')[-1]):  # 14323-1527:1
