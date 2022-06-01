@@ -34,6 +34,9 @@ optional.add_argument(
     '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4313\\wui\\wui.txt', required=False)
 optional.add_argument(
     '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4313\\wui\\gene.annotation.info', required=False)
+optional.add_argument(
+    '-n', '--tablenumber', metavar='[codon table]', help='默认2', type=int, default=2, required=False)
+
 optional.add_argument('-c1', '--flag1', help='run step 1?默认是,不运行则-c1',
                       action='store_false', required=False)
 optional.add_argument('-c2', '--flag2', help='run step 2?默认否,运行则-c2 ',
@@ -42,11 +45,18 @@ optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
 
-def name_mapping(s, table=5):  # 名字映射,第5套密码子,name2
-    amino_acid_1 = ['F', 'L', 'I', 'M', 'V', 'S', 'P', 'T', 'A', 'Y',
-                    '*', 'H', 'Q', 'N', 'K', 'D', 'E', 'C', 'W', 'R', 'S', 'G']
-    amino_acid_2 = ['Phe', 'Leu', 'Ile', 'Met', 'Val', 'Ser', 'Pro', 'Thr', 'Ala',
-                    'Tyr', 'Ter', 'His', 'Gln', 'Asn', 'Lys', 'Asp', 'Glu', 'Cys', 'Trp', 'Arg', 'Ser', 'Gly']
+def name_mapping(s, table=5):  # 名字映射,第5套密码子,name2  其实 2  5 一样的
+    if table == 5:
+        amino_acid_1 = ['F', 'L', 'I', 'M', 'V', 'S', 'P', 'T', 'A', 'Y',
+                        '*', 'H', 'Q', 'N', 'K', 'D', 'E', 'C', 'W', 'R', 'S', 'G']
+        amino_acid_2 = ['Phe', 'Leu', 'Ile', 'Met', 'Val', 'Ser', 'Pro', 'Thr', 'Ala',
+                        'Tyr', 'Ter', 'His', 'Gln', 'Asn', 'Lys', 'Asp', 'Glu', 'Cys', 'Trp', 'Arg', 'Ser', 'Gly']
+    elif table == 2:
+        amino_acid_1 = ['F', 'L', 'I', 'M', 'V', 'S', 'P', 'T', 'A', 'Y',
+                        '*', 'H', 'Q', 'N', 'K', 'D', 'E', 'C', 'W', 'R', 'S', '*', 'G']
+        amino_acid_2 = ['Phe', 'Leu', 'Ile', 'Met', 'Val', 'Ser', 'Pro', 'Thr', 'Ala',
+                        'Tyr', 'Ter', 'His', 'Gln', 'Asn', 'Lys', 'Asp', 'Glu', 'Cys', 'Trp', 'Arg', 'Ser', 'Ter', 'Gly']
+
     # """cds_dict rrn_dict通用"""
     cds_dict = {'nad2': 'NADH dehydrogenase subunit 2',
                 'cox1': 'cytochrome c oxidase subunit 1',
@@ -79,19 +89,43 @@ def trna_mapping(name1):  # trna 映射  临时加的子函数   以后有空再
     return name2
 
 
-def codon_check(codon_str, table=5):  # 第一步,检查cds的起止密码子
+def codon_check(codon_str, table):  # 第一步,检查cds的起止密码子
     # 20220525   考虑	ATG/T(AA)形式
-    start_codon_list = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
-    end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 2 5通用
+    # 20220601   考虑    2 5起止密码子 不同
+    if table == 5:
+        start_codon_list = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+        end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 5
+    elif table == 2:
+        start_codon_list = ['ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+        end_codon_list = ['TAA', 'TAG', 'AGA',
+                          'AGG', 'TA', 'T', 'AG']  # 2,转录时要加A
     start_codon = codon_str.split('/')[0]
     end_codon = codon_str.split('/')[-1]
-    if start_codon in start_codon_list and end_codon in end_codon_list:
-        flag = True
-    else:
-        if end_codon.split('(')[0] in end_codon_list:
-            flag = True
-        else:
-            flag = False
+
+    if start_codon in start_codon_list:
+        if end_codon in end_codon_list:
+            flag = 0  # ok
+        elif end_codon not in end_codon_list:
+            if end_codon.split('(')[0] in end_codon_list:
+                flag = 0
+            elif end_codon.split('(')[0] not in end_codon_list:
+                flag = 1  # 仅末尾x
+    elif start_codon not in start_codon_list:
+        if end_codon in end_codon_list:
+            flag = 2  # 仅开头x
+        elif end_codon not in end_codon_list:
+            if end_codon.split('(')[0] in end_codon_list:
+                flag = 2
+            elif end_codon.split('(')[0] not in end_codon_list:
+                flag = 3  # 都错
+
+                # if start_codon in start_codon_list and end_codon in end_codon_list:
+                #flag = True
+                # else:
+                # if end_codon.split('(')[0] in end_codon_list:
+                #flag = True
+                # else:
+                #flag = False
     return flag
 
 
@@ -154,7 +188,7 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
     return list_missing_cds, list_missing_trna, list_extra_cds, list_extra_trna
 
 
-def tbl_format_parse(in_path=args.infile, out_path=args.outfile):
+def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tablenumber):
     with open(in_path, 'r') as in_handle, open(out_path, 'w') as out_handle:
         """计数"""
         count, cds_n, trn_n, rrn_n, dloop_n = 0, 0, 0, 0, 0
@@ -207,26 +241,37 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile):
                 gene_pos_dict[name] = '{0}-{1}:{2}'.format(start, end, strand)
                 s = '{0}\t{1}-{2}:{3}'.format(
                     n, start, end, strand)
-            elif line.startswith('OL'):  # ol区  复制起始区域
-                s = ''
-            else:  # cds
-                cds_n += 1
-                n = 'CDS'+str(cds_n)
-                if int(ovl) < 0:
-                    cds_ovl_dict[name] = ovl
-                name1 = name
-                name2 = name_mapping(name.split('-')[0])
-                gene_list.append(name1)
-                gene_lenth_dict[name1] = lenth
-                gene_pos_dict[name1] = '{0}-{1}:{2}'.format(start, end, strand)
-                flag = codon_check(codon_str)
-                if flag == True:
-                    s = '{0}\t{1}-{2}:{3}\t{4}\t{5}'.format(
-                        n, start, end, strand, name1, name2)
-                elif flag == False:
-                    tmp_line_number_list.append(count)
-                    s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
-                        n, start, end, strand, name1, name2, flag)
+            # elif line.startswith('OL'):  # ol区  复制起始区域
+                #s = ''
+            else:  # cds ol
+                if not line.startswith('OL'):  # cds
+                    cds_n += 1
+                    n = 'CDS'+str(cds_n)
+                    if int(ovl) < 0:
+                        cds_ovl_dict[name] = ovl
+                    name1 = name
+                    name2 = name_mapping(name.split('-')[0])
+                    gene_list.append(name1)
+                    gene_lenth_dict[name1] = lenth
+                    gene_pos_dict[name1] = '{0}-{1}:{2}'.format(
+                        start, end, strand)
+                    flag = codon_check(codon_str, table)
+
+                    if flag == 0:
+                        s = '{0}\t{1}-{2}:{3}\t{4}\t{5}'.format(
+                            n, start, end, strand, name1, name2)
+                    elif flag == 1:
+                        tmp_line_number_list.append(count)
+                        s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
+                            n, start, end, strand, name1, name2, 'end wrong')
+                    elif flag == 2:
+                        tmp_line_number_list.append(count)
+                        s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
+                            n, start, end, strand, name1, name2, 'start wrong')
+                    elif flag == 3:
+                        tmp_line_number_list.append(count)
+                        s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
+                            n, start, end, strand, name1, name2, '!!!wrong!!!')
             """写入"""
             print(s)
             out_handle.write(s+'\n')
