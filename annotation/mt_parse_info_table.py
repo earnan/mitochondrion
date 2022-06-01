@@ -44,6 +44,8 @@ optional.add_argument('-c2', '--flag2', help='run step 2?默认否,运行则-c2 
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
+# ##################################################################################名字映射
+
 
 def name_mapping(s, table=5):  # 名字映射,第5套密码子,name2  其实 2  5 一样的
     if table == 5:
@@ -88,6 +90,8 @@ def trna_mapping(name1):  # trna 映射  临时加的子函数   以后有空再
     name2 = 'tRNA-'+name_mapping(letter)
     return name2
 
+# ########################################################################################################################step 1
+
 
 def codon_check(codon_str, table):  # 第一步,检查cds的起止密码子
     # 20220525   考虑	ATG/T(AA)形式
@@ -128,6 +132,8 @@ def codon_check(codon_str, table):  # 第一步,检查cds的起止密码子
                 #flag = False
     return flag
 
+# ##################################################################################################step 2
+
 
 def overlap_check(cds_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cds的overlap
     pw('--------------------------Step 2 Check cds overlap!--------------------------')
@@ -144,6 +150,8 @@ def overlap_check(cds_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cd
                 new_end = int(gene_pos_dict[next_gene].split('-')[0])-1
                 pw('{} pos may be {}-{}:+ '.format(ovl_cds, start, new_end))
     return 0
+
+# #########################################################################################step 3
 
 
 def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
@@ -187,11 +195,13 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
             list_extra_trna.append(i)
     return list_missing_cds, list_missing_trna, list_extra_cds, list_extra_trna
 
+# ########################################################################################################################################
+
 
 def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tablenumber):
     with open(in_path, 'r') as in_handle, open(out_path, 'w') as out_handle:
         """计数"""
-        count, cds_n, trn_n, rrn_n, dloop_n = 0, 0, 0, 0, 0
+        count, cds_n, trn_n, rrn_n, dloop_n, ol_n = 0, 0, 0, 0, 0, 0
         """跳过第一行"""
         line = in_handle.readline()
         cds_ovl_dict = {}  # 用于存储有overlap的cds
@@ -241,41 +251,46 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tabl
                 gene_pos_dict[name] = '{0}-{1}:{2}'.format(start, end, strand)
                 s = '{0}\t{1}-{2}:{3}'.format(
                     n, start, end, strand)
-            # elif line.startswith('OL'):  # ol区  复制起始区域
-                #s = ''
-            else:  # cds ol
-                if not line.startswith('OL'):  # cds
-                    cds_n += 1
-                    n = 'CDS'+str(cds_n)
-                    if int(ovl) < 0:
-                        cds_ovl_dict[name] = ovl
-                    name1 = name
-                    name2 = name_mapping(name.split('-')[0])
-                    gene_list.append(name1)
-                    gene_lenth_dict[name1] = lenth
-                    gene_pos_dict[name1] = '{0}-{1}:{2}'.format(
-                        start, end, strand)
-                    flag = codon_check(codon_str, table)
+            elif line.startswith('OL'):  # ol区  复制起始区域
+                ol_n += 1
+                n = 'OL'+str(ol_n)
+                gene_list.append(name)
+                gene_lenth_dict[name] = lenth
+                gene_pos_dict[name] = '{0}-{1}:{2}'.format(start, end, strand)
+                s = '{0}\t{1}-{2}:{3}'.format(
+                    n, start, end, strand)
+            else:  # cds
+                cds_n += 1
+                n = 'CDS'+str(cds_n)
+                if int(ovl) < 0:
+                    cds_ovl_dict[name] = ovl
+                name1 = name
+                name2 = name_mapping(name.split('-')[0])
+                gene_list.append(name1)
+                gene_lenth_dict[name1] = lenth
+                gene_pos_dict[name1] = '{0}-{1}:{2}'.format(
+                    start, end, strand)
+                flag = codon_check(codon_str, table)
 
-                    if flag == 0:
-                        s = '{0}\t{1}-{2}:{3}\t{4}\t{5}'.format(
-                            n, start, end, strand, name1, name2)
-                    elif flag == 1:
-                        tmp_line_number_list.append(count)
-                        s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
-                            n, start, end, strand, name1, name2, 'end wrong')
-                    elif flag == 2:
-                        tmp_line_number_list.append(count)
-                        s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
-                            n, start, end, strand, name1, name2, 'start wrong')
-                    elif flag == 3:
-                        tmp_line_number_list.append(count)
-                        s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
-                            n, start, end, strand, name1, name2, '!!!wrong!!!')
+                if flag == 0:
+                    s = '{0}\t{1}-{2}:{3}\t{4}\t{5}'.format(
+                        n, start, end, strand, name1, name2)
+                elif flag == 1:
+                    tmp_line_number_list.append(count)
+                    s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
+                        n, start, end, strand, name1, name2, 'end wrong')
+                elif flag == 2:
+                    tmp_line_number_list.append(count)
+                    s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
+                        n, start, end, strand, name1, name2, 'start wrong')
+                elif flag == 3:
+                    tmp_line_number_list.append(count)
+                    s = '{0}\t{1}-{2}:{3}\t{4}\t{5}\t{6}'.format(
+                        n, start, end, strand, name1, name2, '!!!wrong!!!')
             """写入"""
             print(s)
             out_handle.write(s+'\n')
-    return cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, gene_lenth_dict, count, tmp_line_number_list
+    return cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, ol_n, gene_lenth_dict, count, tmp_line_number_list
 
 
 def pw(s, out_path=args.outfile):
@@ -284,8 +299,9 @@ def pw(s, out_path=args.outfile):
         out_handle.write(str(s)+'\n')
 
 
+# ###########################################################################################################################################主函数
 print('\n')
-cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, gene_lenth_dict, count, tmp_line_number_list = tbl_format_parse()  # 1
+cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, ol_n, gene_lenth_dict, count, tmp_line_number_list = tbl_format_parse()  # 1
 pw('\n')
 pw('--------------------------Step 1 Check flag tag!--------------------------')
 pw(str(tmp_line_number_list))
@@ -293,7 +309,7 @@ overlap_check(cds_ovl_dict, gene_list, gene_pos_dict)  # 2
 pw('--------------------------Step 3 Check gene quantity!--------------------------')
 list_missing_cds, list_missing_trna, list_extra_cds, list_extra_trna = gene_count_check(
     gene_list)  # 3
-pw((cds_n,    trn_n,    rrn_n,    dloop_n))
+pw((cds_n,    trn_n,    rrn_n,    dloop_n, ol_n))
 pw(cds_n+trn_n+rrn_n)
 pw(('{}=13+{}-{}'.format(cds_n, len(list_extra_cds), len(list_missing_cds)),
    list_extra_cds, [gene_lenth_dict[i] for i in list_extra_cds], list_missing_cds))
