@@ -38,7 +38,7 @@ optional.add_argument(
 # 124842-124892:-;126001-126552:-', required=False)
 # 124353-124892:-;126001-126552:-', required=False)
 optional.add_argument(
-    '-n', '--codonnumber', metavar='[codon_number]', help='密码子表', type=int, default=5, required=False)
+    '-n', '--codonnumber', metavar='[codon_number]', help='密码子表,默认5', type=int, default=5, required=False)
 optional.add_argument(
     '-m', '--maxnumber', metavar='[max_number]', help='最大递归查找次数', type=int, default=0, required=False)
 optional.add_argument('-f1', '--flag1', help='翻译?默认是,不运行则-c1',
@@ -122,12 +122,16 @@ def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下�
 
 
 def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一个终止子在基因序列上的相对位置
-    # start_code_table = ['TTG', 'CTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG'] #11
+    # start_codon_list = ['TTG', 'CTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG'] #11
+
+    # 20220601   考虑    2 5起止密码子 不同
     if n == 5:
-        start_code_table = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']  # 5
+        start_codon_list = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+        end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 5
     elif n == 2:
-        start_code_table = ['ATT', 'ATC', 'ATA', 'ATG', 'GTG']  # 2
-    end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 2 5通用
+        start_codon_list = ['ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+        end_codon_list = ['TAA', 'TAG', 'AGA',
+                          'AGG', 'TA', 'T', 'AG']  # 2,转录时要加A
 
     tmp_flag = False
     inter_number = 0
@@ -141,7 +145,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
     print('------------------------------------------------------------')
     print(acid)
 
-    if not cds_seq[0:3] in start_code_table:  # 起始不正确
+    if not cds_seq[0:3] in start_codon_list:  # 起始不正确
         print('#####start is wrong!')
     else:  # 起始正确,又分3种情况
         if acid.count('*') > 1:  # 终止多于1,意味着提前终止
