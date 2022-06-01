@@ -31,9 +31,9 @@ V1.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4228\\nd30052\\nd300.txt', required=False)
+    '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4313\\wui\\wui.txt', required=False)
 optional.add_argument(
-    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4228\\nd30052\\gene.annotation.info2', required=False)
+    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4313\\wui\\gene.annotation.info', required=False)
 optional.add_argument('-c1', '--flag1', help='run step 1?默认是,不运行则-c1',
                       action='store_false', required=False)
 optional.add_argument('-c2', '--flag2', help='run step 2?默认否,运行则-c2 ',
@@ -207,6 +207,8 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile):
                 gene_pos_dict[name] = '{0}-{1}:{2}'.format(start, end, strand)
                 s = '{0}\t{1}-{2}:{3}'.format(
                     n, start, end, strand)
+            elif line.startswith('OL'):  # ol区  复制起始区域
+                s = ''
             else:  # cds
                 cds_n += 1
                 n = 'CDS'+str(cds_n)
