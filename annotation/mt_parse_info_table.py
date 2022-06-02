@@ -31,9 +31,9 @@ V1.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4313\\wui\\wui.txt', required=False)
+    '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4313\\nano\\nano.txt', required=False)
 optional.add_argument(
-    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4313\\wui\\gene.annotation.info', required=False)
+    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4313\\nano\\gene.annotation.info', required=False)
 optional.add_argument(
     '-n', '--tablenumber', metavar='[codon table]', help='默认2', type=int, default=2, required=False)
 
@@ -81,7 +81,7 @@ def name_mapping(s, table=5):  # 名字映射,第5套密码子,name2  其实 2  
     elif s.startswith('rrn'):
         c = rrn_dict[s]
     else:
-        c = cds_dict[s]
+        c = cds_dict[s.split('_')[0]]  # 最开始 只考虑 atp-a 形式  后面考虑 nad5_0 形式
     return c
 
 
