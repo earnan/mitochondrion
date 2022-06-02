@@ -188,8 +188,11 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
             list_missing_trna.append(all_trna_list[i])
     """统计多余的"""
     for i in cds_list:
-        if len(i.split('-')) > 1:
+        if len(i.split('-')) > 1:  # 仅考虑atp-a形式
             list_extra_cds.append(i)
+        elif len(i.split('_')) > 1:  # 0602 考虑nad5_0形式
+            list_extra_cds.append(i)
+
     for i in trna_list:
         if len(i.split('_')) > 1:
             list_extra_trna.append(i)
