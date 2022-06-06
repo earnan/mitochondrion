@@ -2,16 +2,17 @@
 # -*- coding : utf-8 -*-
 ##########################################################
 #
-#       Filename:   mt_trna_draw.py
+#       Filename:   mt_RNAplot_trna_draw.py
 #         Author:   yujie
-#    Description:   mt_trna_draw.py
+#    Description:   mt_RNAplot_trna_draw.py
 #        Version:   1.0
-#           Time:   2022/05/27 18:13:28
-#  Last Modified:   2022/05/27 18:13:28
+#           Time:   2022/06/06 17:20:08
+#  Last Modified:   2022/06/06 17:20:08
 #        Contact:   hi@arcsona.cn
 #        License:   Copyright (C) 2022
 #
 ##########################################################
+
 from Bio import SeqIO
 from Bio.Seq import Seq
 #from icecream import ic
@@ -22,7 +23,7 @@ import re
 import time
 parser = argparse.ArgumentParser(
     add_help=False, usage='\
-\npython3   mt_trna_draw.py\n\
+\npython3   mt_RNAplot_trna_draw.py\n\
 step1\n\
 step2\n\
 V1.0')
