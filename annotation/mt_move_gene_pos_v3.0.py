@@ -2,13 +2,17 @@
 # -*- coding : utf-8 -*-
 ##########################################################
 #
-#       Filename: 编程处理模板.py
-#         Author: yuj@genepioneer.cn
-#    Description: sample
-#  Last Modified: 2021-xx-xx 16:29:29
+#       Filename:   mt_move_gene_pos_v3.0.py
+#         Author:   yujie
+#    Description:   mt_move_gene_pos_v3.0.py
+#        Version:   3.0
+#           Time:   2022/06/07 09:38:21
+#  Last Modified:   2022/06/07 09:38:21
+#        Contact:   hi@arcsona.cn
+#        License:   Copyright (C) 2022
 #
-# Copyright (C) 2021xxxx genepioneer Corporation
 ##########################################################
+
 import argparse
 parser = argparse.ArgumentParser(
     add_help=False, usage='\npython3   线粒体平移基因修改位置V3.0')
