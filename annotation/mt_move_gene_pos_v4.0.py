@@ -5,23 +5,36 @@
 #       Filename:   mt_move_gene_pos_v3.0.py
 #         Author:   yujie
 #    Description:   mt_move_gene_pos_v3.0.py
-#        Version:   3.0
+#        Version:   4.0
 #           Time:   2022/06/07 09:38:21
-#  Last Modified:   2022/06/07 09:38:21
+#  Last Modified:   2022/06/07 18:38:21
 #        Contact:   hi@arcsona.cn
 #        License:   Copyright (C) 2022
 #
 ##########################################################
-
+from Bio import SeqIO
+from Bio.Seq import Seq
+#from icecream import ic
 import argparse
+import linecache
+import os
+import re
+import time
+
 parser = argparse.ArgumentParser(
-    add_help=False, usage='\npython3   线粒体平移基因修改位置V3.0')
+    add_help=False, usage='\
+\npython3   线粒体平移基因修改位置V4.0\n\
+不分开操作,则n1=0,n2有效\n\
+即输入-n1 0 -n2 x\n\
+V4.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--input', metavar='[file]', type=str, help='要修改的文件,默认', default='gene.annotation.info', required=False)
+    '-i', '--input', metavar='[file]', type=str, help='要修改的文件,默认', default='F:\\4228\\nd30052\\gene.annotation.info', required=False)
 optional.add_argument(
-    '-o', '--output', metavar='[file]', type=str, help='输出文件,默认', default='final_gene.annotation.info', required=False)
+    '-fa', '--infasta', metavar='[file]', type=str, help='要修改的fsa', required=False)
+optional.add_argument(
+    '-o', '--output', metavar='[file]', type=str, help='输出文件,默认', default='F:\\4228\\nd30052\\final_gene.annotation.info', required=False)
 optional.add_argument(
     '-ln', '--line_number', metavar='[int]', type=int, help='从第几行开始分开操作,默认不分开', default=1,  required=False)
 optional.add_argument(
@@ -37,6 +50,7 @@ if args.info:
     print("     适用于内含子外显子")
     print("     #20220210第三版考虑了分段操作,仍需进一步排序\n      分段操作即修改环状的起点\n      此外第三版都改为了子函数")
     print("     增加了排序函数")
+    print("     #20220607考虑跨首尾基因排序到开头,其自己的计数")
     print("\n")
 
 
@@ -68,6 +82,8 @@ def edit_pos(pos_info, n):  # 1-10:+ 修改为 101-110:+
 
 
 def get_new_line(line, n):
+    # 20220607
+    max_len = 13955
     line_content = line.split()
     pos_info = line_content[1]  # 例如67574-67687:-;135718-135975:+
     s_content = pos_info.split(';')  # 分号隔开
@@ -76,7 +92,10 @@ def get_new_line(line, n):
     elif len(s_content) == 2:
         new_pos_info1 = edit_pos(s_content[0], n)
         new_pos_info2 = edit_pos(s_content[1], n)
-        new_pos_info = new_pos_info1+';'+new_pos_info2
+        if int(new_pos_info1.split('-')[0]) > max_len:  # 20220607考虑跨首尾的基因
+            new_pos_info = '1'+'-'+new_pos_info2.split('-')[1]
+        else:
+            new_pos_info = new_pos_info1+';'+new_pos_info2
     elif len(s_content) == 3:
         new_pos_info1 = edit_pos(s_content[0], n)
         new_pos_info2 = edit_pos(s_content[1], n)
@@ -111,13 +130,44 @@ def pos_sort(input_file, output_file):
     fo = open(output_file, 'w')
     dic = {}
     for line in fi:
-        id = int(line.split()[1].split('-')[0])
+        id = int(line.split()[1].split('-')[0])  # 位置的第一个起点
         dic[id] = line
-    # print(dic)
-    for i in sorted(dic):
-        print(dic[i].strip('\n'))
-        fo.write(dic[i])
+
+    """计数"""
+    count, cds_n, trn_n, rrn_n, dloop_n, ol_n = 0, 0, 0, 0, 0, 0  # 20220607考虑跨首尾基因排序到开头,其自己的计数
+    """判断"""
+    for i in sorted(dic):  # 排序
+        line = dic[i].strip('\n')
+        if line.startswith('rRNA'):  # rrna
+            rrn_n += 1
+            n = 'rRNA'+str(rrn_n)
+        elif line.startswith('tRNA'):  # trna
+            trn_n += 1
+            n = 'tRNA'+str(trn_n)
+        elif line.startswith('D-loop'):  # dloop
+            dloop_n += 1
+            n = 'D-loop'+str(dloop_n)
+        elif line.startswith('OL'):  # ol区  复制起始区域
+            ol_n += 1
+            n = 'OL'+str(ol_n)
+        elif line.startswith('CDS'):  # cds
+            cds_n += 1
+            n = 'CDS'+str(cds_n)
+
+        old_str = line.split('\t')[0]
+        new_str = n
+        print(line.replace(old_str, new_str))
+        fo.write(dic[i].replace(old_str, new_str))
     return 0
 
 
 pos_sort('tmp', args.output)
+
+
+if args.line_number == 1 and args.number2 > 0 and args.infasta:  # 仅考虑把末尾n2 bp碱基挪到开头
+    with open(args.infasta, 'r') as fi_handle:
+        tmp_dict = {}
+        seq_id = fi_handle.readline()
+        seq = fi_handle.readline()
+        tmp_dict[seq_id] = seq
+print(tmp_dict)
