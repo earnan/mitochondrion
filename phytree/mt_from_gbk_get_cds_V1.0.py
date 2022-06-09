@@ -3,7 +3,8 @@
 ##########################################################
 #
 #       Filename:   mt_from_gbk_get_cds.py
-# Original Author:
+# Original Author:  经过多次更改,程序主体与原作者已经无关,可以加上Author
+#         Author:   yujie
 #    Description:   mt_from_gbk_get_cds.py
 #        Version:   1.0
 #           Time:   2022/03/09 15:21:51
