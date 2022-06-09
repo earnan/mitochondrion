@@ -25,22 +25,22 @@ parser = argparse.ArgumentParser(
     add_help=False, usage='\
 \npython3   线粒体平移基因修改位置V4.0\n\
 不分开操作,则n1=0,n2有效\n\
-即输入-n1 0 -n2 x\n\
+即输入-n2 x 即可\n\
 V4.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--input', metavar='[file]', type=str, help='要修改的文件,默认', default='F:\\4228\\nd30052\\gene.annotation.info', required=False)
+    '-i', '--input', metavar='[file]', type=str, help='要修改的文件,测试默认,需输入', default='F:\\4228\\nd30052\\gene.annotation.info', required=False)
 optional.add_argument(
-    '-fa', '--infasta', metavar='[file]', type=str, help='要修改的fsa', required=False)
+    '-fa', '--infasta', metavar='[file]', type=str, help='要修改的fsa,使用时需要输入', required=False)
 optional.add_argument(
-    '-o', '--output', metavar='[file]', type=str, help='输出文件,默认', default='F:\\4228\\nd30052\\final_gene.annotation.info', required=False)
+    '-o', '--output', metavar='[file]', type=str, help='输出文件,测试默认,需输入', default='F:\\4228\\nd30052\\final_gene.annotation.info', required=False)
 optional.add_argument(
     '-ln', '--line_number', metavar='[int]', type=int, help='从第几行开始分开操作,默认不分开', default=1,  required=False)
 optional.add_argument(
-    '-n1', '--number1', metavar='[int]', type=int, help='平移距离1',  required=False)
+    '-n1', '--number1', metavar='[int]', type=int, help='平移距离1,可能不用输入',  required=False)
 optional.add_argument(
-    '-n2', '--number2', metavar='[int]', type=int, help='平移距离2',  required=False)
+    '-n2', '--number2', metavar='[int]', type=int, help='平移距离2,一定要输入',  required=False)
 optional.add_argument(
     '-h1', '--info', metavar='[完整的帮助信息]', type=bool, help="使用时'-h1 1'即可", default='', required=False)
 optional.add_argument('-h', '--help', action='help', help='帮助信息')
