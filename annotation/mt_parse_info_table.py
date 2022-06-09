@@ -167,6 +167,7 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
         else:
             cds_list.append(i)
     """赋值4个列表"""
+    all_rrna_list = ['rrnL', 'rrnS']
     all_trna_list = ['trnK-TTT', 'trnV-TAC', 'trnL1-TAG', 'trnA-TGC', 'trnP-TGG', 'trnD-GTC', 'trnC-GCA', 'trnF-GAA', 'trnY-GTA', 'trnW-TCA',
                      'trnG-TCC', 'trnH-GTG', 'trnQ-TTG', 'trnL2-TAA', 'trnN-GTT', 'trnR-TCG', 'trnE-TTC', 'trnM-CAT', 'trnS2-TGA', 'trnS1-GCT', 'trnT-TGT', 'trnI-GAT']
     all_cds_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
@@ -174,18 +175,21 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
     all_cds_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
     """初始化"""
-    list_missing_cds,  list_missing_trna = [], []  # 缺失
-    list_extra_cds, list_extra_trna = [], []  # 多余
+    list_missing_cds,  list_missing_trna, list_missing_rrna = [], [], []  # 缺失
+    list_extra_cds, list_extra_trna, list_extra_rrna = [], [], []  # 多余
     """统计缺失的"""
-    for i in range(len(all_cds_list_upper)):
+    for i in range(len(all_cds_list_upper)):  # cds
         if not (all_cds_list_upper[i] in cds_list
                 or all_cds_list_upper[i].lower() in cds_list
                 or all_cds_list_lower[i] in cds_list
                 or all_cds_list_lower[i].upper() in cds_list):
             list_missing_cds.append(all_cds_list_upper[i])
-    for i in range(len(all_trna_list)):
+    for i in range(len(all_trna_list)):  # trna
         if all_trna_list[i] not in trna_list:
             list_missing_trna.append(all_trna_list[i])
+    for i in range(len(all_rrna_list)):  # rrna
+        if all_rrna_list[i] not in rrna_list:
+            list_missing_rrna.append(all_rrna_list[i])
     """统计多余的"""
     for i in cds_list:
         if len(i.split('-')) > 1:  # 仅考虑atp-a形式
@@ -196,7 +200,7 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
     for i in trna_list:
         if len(i.split('_')) > 1:
             list_extra_trna.append(i)
-    return list_missing_cds, list_missing_trna, list_extra_cds, list_extra_trna
+    return list_missing_cds, list_missing_trna, list_missing_rrna, list_extra_cds, list_extra_trna
 
 # ########################################################################################################################################
 
@@ -310,7 +314,7 @@ pw('--------------------------Step 1 Check flag tag!--------------------------')
 pw(str(tmp_line_number_list))
 overlap_check(cds_ovl_dict, gene_list, gene_pos_dict)  # 2
 pw('--------------------------Step 3 Check gene quantity!--------------------------')
-list_missing_cds, list_missing_trna, list_extra_cds, list_extra_trna = gene_count_check(
+list_missing_cds, list_missing_trna, list_missing_rrna, list_extra_cds, list_extra_trna = gene_count_check(
     gene_list)  # 3
 pw((cds_n,    trn_n,    rrn_n,    dloop_n, ol_n))
 pw(cds_n+trn_n+rrn_n)
@@ -318,4 +322,5 @@ pw(('{}=13+{}-{}'.format(cds_n, len(list_extra_cds), len(list_missing_cds)),
    list_extra_cds, [gene_lenth_dict[i] for i in list_extra_cds], list_missing_cds))
 pw(('{}=22+{}-{}'.format(trn_n, len(list_extra_trna),                            len(list_missing_trna)),
    list_extra_trna, [gene_lenth_dict[i] for i in list_extra_trna], list_missing_trna, [trna_mapping(i) for i in list_missing_trna]))
+pw(('{}=2-{}'.format(rrn_n, len(list_missing_rrna)), list_missing_rrna))
 pw('--------------------------Step 4 Edit gene name!--------------------------\n--------------------------Step 5 Search rrnl 1&2!--------------------------\n--------------------------Step 6 Search D-loop region!--------------------------')
