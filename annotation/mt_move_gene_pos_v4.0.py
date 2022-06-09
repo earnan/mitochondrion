@@ -163,11 +163,28 @@ def pos_sort(input_file, output_file):
 
 pos_sort('tmp', args.output)
 
-
+# #############################################################################################挪动碱基
 if args.line_number == 1 and args.number2 > 0 and args.infasta:  # 仅考虑把末尾n2 bp碱基挪到开头
+    abs_path = os.path.abspath(args.infasta)
+    indir_path = os.path.dirname(abs_path)
+    file_prefix = os.path.basename(args.infasta).split('.')[0]
     with open(args.infasta, 'r') as fi_handle:
         tmp_dict = {}
         seq_id = fi_handle.readline()
-        seq = fi_handle.readline()
+        seq = fi_handle.readline().strip()  # 注意末尾有换行
         tmp_dict[seq_id] = seq
-print(tmp_dict)
+    """末尾挪到开头"""
+    n2 = args.number2
+    last = seq[-n2:]
+    # print(last+seq.rstrip(last)) #可能会产生bug
+    s = ''
+    tmp_list = list(seq)
+    for i in range(n2):
+        tmp_list.pop()  # pop函数默认返回被删除的值  直接用就好
+    for i in tmp_list:
+        s += i
+    new_seq = last+s
+    # print(s)
+    with open(os.path.join(indir_path, file_prefix+'.fsa2'), 'w') as fo_handle:
+        fo_handle.write(seq_id)
+        fo_handle.write(new_seq+'\n')
