@@ -5,13 +5,14 @@
 #       Filename:   mt_add_gene_seq.py
 #         Author:   yujie
 #    Description:   mt_add_gene_seq.py
-#        Version:   1.0
+#        Version:   2.0
 #           Time:   2022/05/23 16:35:19
 #  Last Modified:   2022/05/23 16:35:19
 #        Contact:   hi@arcsona.cn
 #        License:   Copyright (C) 2022
 #
 ##########################################################
+from pickle import TRUE
 from Bio import SeqIO
 from Bio.Seq import Seq
 #from icecream import ic
@@ -26,7 +27,7 @@ parser = argparse.ArgumentParser(
 \npython3   mt_add_gene_seq.py\n\
 step1\n\
 step2\n\
-V1.0')
+V2.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
@@ -40,7 +41,7 @@ optional.add_argument(
 optional.add_argument(
     '-n', '--codonnumber', metavar='[codon_number]', help='密码子表,默认5', type=int, default=5, required=False)
 optional.add_argument(
-    '-m', '--maxnumber', metavar='[max_number]', help='最大递归查找次数', type=int, default=0, required=False)
+    '-m', '--maxnumber', metavar='[max_number]', help='最大递归查找次数,默认0,假查找', type=int, default=0, required=False)
 optional.add_argument('-f1', '--flag1', help='翻译?默认是,不运行则-c1',
                       action='store_false', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
@@ -133,7 +134,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
         end_codon_list = ['TAA', 'TAG', 'AGA',
                           'AGG', 'TA', 'T', 'AG']  # 2,转录时要加A
 
-    tmp_flag = False
+    tmp_flag = 0  # tmp_flag 起始是否正确的标志,默认False   20220610改为数字,0为正确,1为起始x,2为内部错,3为末尾错
     inter_number = 0
     if len(cds_seq) % 3 == 1:
         print('len(sequence) not a multiple of three! {}=3n+1'.format(len(cds_seq)))
@@ -147,9 +148,11 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
 
     if not cds_seq[0:3] in start_codon_list:  # 起始不正确
         print('#####start is wrong!')
+        tmp_flag = 1
     else:  # 起始正确,又分3种情况
         if acid.count('*') > 1:  # 终止多于1,意味着提前终止
             print('#####interior is wrong!')
+            tmp_flag = 2
             inter_number = acid.find('*')
             print(inter_number)
             print('\n')
@@ -162,14 +165,16 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
                     '------------------------------------------------------------ok')
             else:
                 print('#####end is wrong!')
+                tmp_flag = 3
         else:  # 1个终止子,提前终止或者没问题
             if not acid.endswith('*'):
                 print('#####interior is wrong!')
+                tmp_flag = 2
                 inter_number = acid.find('*')
                 print(inter_number)
                 print('\n')
             else:
-                tmp_flag = True
+                tmp_flag = 0
                 print('------------------------------------------------------------ok')
     return tmp_flag, inter_number
 
@@ -218,17 +223,18 @@ def get_new_pos(tmp_pos_list, inter_number):
 # 循环查找
 
 
+# 命令行传参 *.fas/"1-10:-;20-30:-"/翻译/递归计数/最大递归次数
 def loop_look(infasta, posstr, flag1, loop_count, maxnumber, n):
-    #print('loop look start')
     seq = read_file(infasta)
     pos_list = format_pos(posstr)
-    cds_seq, tmp_pos_list = merge_sequence(pos_list, seq)
+    cds_seq, tmp_pos_list = merge_sequence(
+        pos_list, seq)  # tmp_pos_list  把位置当列表再传出来,这个位置信息向下传递
     print('\n'+cds_seq)
 
     if flag1:  # 翻译
         tmp_flag, inter_number = trans2acid(cds_seq, n)
-        if tmp_flag == True:
-            if len(posstr.split(';')) != len(tmp_pos_list):
+        if tmp_flag == 0:
+            if len(posstr.split(';')) != len(tmp_pos_list):  # 忘了???
                 if len(tmp_pos_list) == 2:
                     new_posstr = tmp_pos_list[0].replace(
                         ':1', ':+')+';'+tmp_pos_list[1].replace(':1', ':+')  # 考虑跨首尾
@@ -236,7 +242,47 @@ def loop_look(infasta, posstr, flag1, loop_count, maxnumber, n):
                     new_posstr = tmp_pos_list
             else:
                 new_posstr = posstr
-            print(new_posstr)
+            print('正确位置: {}'.format(new_posstr))  # 正确的话,此处就再次打印出输入的位置字符串
+            """考虑细分情况 20220610考虑起始子错误的查找  其他错误类型暂时不考虑,用原来的程序写死"""
+        elif tmp_flag == 1:  # 起始错
+            # posstr 能传到这里  形如 1-7:+;14020-14078:+
+            # tmp_pos_list 也能传到这里  形如['1-7:1', '14020-14078:1']
+            loop_count += 1
+            print('第{}次查找中'.format(loop_count))
+            cds_seq = cds_seq[3:]  # 已经判断起始错误了,因此直接把序列剪掉前面3个碱基
+
+            if n == 5:
+                start_codon_list = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+                end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 5
+            elif n == 2:
+                start_codon_list = ['ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+                end_codon_list = ['TAA', 'TAG', 'AGA',
+                                  'AGG', 'TA', 'T', 'AG']  # 2,转录时要加A
+            if cds_seq[0:3] not in start_codon_list:
+                start_flag = False
+                new_posstr = input('与上次命令行输入-6bp new pos: ')  # 先改手动输入,以后改自动
+                if loop_count <= maxnumber:
+                    loop_look(infasta, new_posstr, flag1,
+                              loop_count, maxnumber, n)
+            else:
+                start_flag = True
+                new_posstr = input('与上次命令行输入 -3bp 为正确位置: ')  # 先改手动输入,以后改自动
+                tmp_flag, inter_number = trans2acid(cds_seq, n)
+                print('正确位置: {}'.format(new_posstr))  # 正确的话,此处就再次打印出输入的位置字符串
+
+        else:
+            maxnumber == 0  # 赋值为0  相当于一个假查找
+            # 一般是在外面赋值,这里因为修改tmp_falg==1的查找,不能在参数设置时默认为0,否则会影响tmp_falg==1的情况
+            loop_count += 1
+            print('第{}次查找中'.format(loop_count))
+            new_posstr = '124353-124892:-;126001-126552:-'
+
+            if loop_count <= maxnumber:
+                loop_look(infasta, new_posstr, flag1, loop_count, maxnumber, n)
+            else:
+                print('{}次查找未有结果,取消第{}次查找'.format(loop_count-1, loop_count))
+
+        """第一版   没有细分tmp_flag的情况
         elif tmp_flag == False:
             loop_count += 1
             print('第{}次查找中'.format(loop_count))
@@ -246,7 +292,7 @@ def loop_look(infasta, posstr, flag1, loop_count, maxnumber, n):
                 loop_look(infasta, new_posstr, flag1, loop_count, maxnumber, n)
             else:
                 print('{}次查找未有结果,取消第{}次查找'.format(loop_count-1, loop_count))
-    #print('loop look end\n')
+        """
     return tmp_pos_list, inter_number
 
 
@@ -259,7 +305,7 @@ if __name__ == '__main__':
     print('Start Time : {}'.format(start_time))
     #################################################################
     """
-    loop_count = 0  # 控制递归次数,在loop_look函数外部定义全局变量
+    loop_count = 0  # 控制递归次数,在loop_look函数外部定义全局变量   递归的计数
     tmp_pos_list, inter_number = loop_look(
         args.infasta, args.posstr, args.flag1, loop_count, args.maxnumber, args.codonnumber)
     get_new_pos(tmp_pos_list, inter_number)
