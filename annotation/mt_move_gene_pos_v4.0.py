@@ -92,12 +92,20 @@ def get_new_line(line, n, max_len):
     if len(s_content) == 1:
         new_pos_info = edit_pos(pos_info, n)
         if int(new_pos_info.split('-')[0]) > max_len:  # 20220610考虑没有内含子的跨首尾的基因
-            new_pos_info = '1'+'-'+new_pos_info.split('-')[1]
+            start = '1'
+            end = new_pos_info.split('-')[1]
+            if new_pos_info.endswith('-'):  # split会把末尾的 负链也当成分隔符
+                new_pos_info = start+'-'+end+'-'
+            else:
+                new_pos_info = start+'-'+end
     elif len(s_content) == 2:
         new_pos_info1 = edit_pos(s_content[0], n)
         new_pos_info2 = edit_pos(s_content[1], n)
         if int(new_pos_info1.split('-')[0]) > max_len:  # 20220607考虑跨首尾的基因
-            new_pos_info = '1'+'-'+new_pos_info2.split('-')[1]
+            if new_pos_info2.endswith('-'):
+                new_pos_info = '1'+'-'+new_pos_info2.split('-')[1]+'-'
+            else:
+                new_pos_info = '1'+'-'+new_pos_info2.split('-')[1]
         else:
             new_pos_info = new_pos_info1+';'+new_pos_info2
     elif len(s_content) == 3:
