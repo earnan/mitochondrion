@@ -91,6 +91,8 @@ def get_new_line(line, n, max_len):
     s_content = pos_info.split(';')  # 分号隔开
     if len(s_content) == 1:
         new_pos_info = edit_pos(pos_info, n)
+        if int(new_pos_info.split('-')[0]) > max_len:  # 20220610考虑没有内含子的跨首尾的基因
+            new_pos_info = '1'+'-'+new_pos_info.split('-')[1]
     elif len(s_content) == 2:
         new_pos_info1 = edit_pos(s_content[0], n)
         new_pos_info2 = edit_pos(s_content[1], n)
@@ -139,7 +141,10 @@ if args.line_number == 1 and args.number2 > 0 and args.infasta:  # 仅考虑把�
 
 """平移的主函数"""
 fi = open(args.input, 'r')
-tmp = open('tmp', 'w')
+abs_path = os.path.abspath(args.input)
+indir_path = os.path.dirname(abs_path)
+tmp_path = os.path.join(indir_path, 'tmp')
+tmp = open(tmp_path, 'w')
 ln = args.line_number
 n1 = args.number1
 n2 = args.number2
@@ -193,4 +198,4 @@ def pos_sort(input_file, output_file):
     return 0
 
 
-pos_sort('tmp', args.output)
+pos_sort(tmp_path, args.output)
