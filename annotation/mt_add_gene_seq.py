@@ -27,6 +27,7 @@ parser = argparse.ArgumentParser(
 \npython3   mt_add_gene_seq.py\n\
 step1\n\
 step2\n\
+使用起始子循环查找功能,要输入-m 参数\n\
 V2.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
