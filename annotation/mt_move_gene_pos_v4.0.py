@@ -163,7 +163,7 @@ tmp.close()
 
 # 排序的子函数
 def pos_sort(input_file, output_file):
-    fi = open(input_file, 'r')
+    fi = open(input_file, 'r')  # 打开tmp
     fo = open(output_file, 'w')
     dic = {}
     for line in fi:
@@ -174,7 +174,7 @@ def pos_sort(input_file, output_file):
     count, cds_n, trn_n, rrn_n, dloop_n, ol_n = 0, 0, 0, 0, 0, 0  # 20220607考虑跨首尾基因排序到开头,其自己的计数
     """判断"""
     for i in sorted(dic):  # 排序
-        line = dic[i].strip('\n')
+        line = dic[i].strip('\n')  # 去除了两端换行
         if line.startswith('rRNA'):  # rrna
             rrn_n += 1
             n = 'rRNA'+str(rrn_n)
@@ -183,7 +183,7 @@ def pos_sort(input_file, output_file):
             n = 'tRNA'+str(trn_n)
         elif line.startswith('D-loop'):  # dloop
             dloop_n += 1
-            n = 'D-loop'+str(dloop_n)
+            n = 'D-loop'
         elif line.startswith('OL'):  # ol区  复制起始区域
             ol_n += 1
             n = 'OL'+str(ol_n)
@@ -194,7 +194,7 @@ def pos_sort(input_file, output_file):
         old_str = line.split('\t')[0]
         new_str = n
         print(line.replace(old_str, new_str))
-        fo.write(dic[i].replace(old_str, new_str))
+        fo.write(line.replace(old_str, new_str)+'\n')
     return 0
 
 
