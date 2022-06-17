@@ -31,17 +31,19 @@ V4.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--input', metavar='[file]', type=str, help='要修改的文件,需输入', required=False)
+    '-i', '--ininfo', metavar='[file]', type=str, help='要修改的文件,需输入', required=False)
 optional.add_argument(
     '-fa', '--infasta', metavar='[file]', type=str, help='要修改的fsa,使用时需要输入', required=False)
 optional.add_argument(
-    '-o', '--output', metavar='[file]', type=str, help='输出文件,需输入', required=False)
+    '-o', '--outinfo', metavar='[file]', type=str, help='输出文件,需输入', required=False)
 optional.add_argument(
     '-ln', '--line_number', metavar='[int]', type=int, help='从第几行开始分开操作,默认不分开', default=1,  required=False)
 optional.add_argument(
     '-n1', '--number1', metavar='[int]', type=int, help='平移距离1,可能不用输入',  required=False)
 optional.add_argument(
     '-n2', '--number2', metavar='[int]', type=int, help='平移距离2,一定要输入',  required=False)
+optional.add_argument(
+    '-m', '--maxlen', metavar='[len(fasta)]', type=int, help='只对注释平移排序,需要输入-i -o -n2 -m',  required=False)
 optional.add_argument(
     '-h1', '--info', metavar='[完整的帮助信息]', type=bool, help="使用时'-h1 1'即可", default='', required=False)
 optional.add_argument('-h', '--help', action='help', help='帮助信息')
@@ -118,57 +120,6 @@ def get_new_line(line, n, max_len):
     return new_line
 
 
-# #############################################################################################挪动碱基
-if args.line_number == 1 and args.number2 > 0 and args.infasta:  # 仅考虑把末尾n2 bp碱基挪到开头
-    abs_path = os.path.abspath(args.infasta)
-    indir_path = os.path.dirname(abs_path)
-    file_prefix = os.path.basename(args.infasta).split('.')[0]
-    with open(args.infasta, 'r') as fi_handle:
-        tmp_dict = {}
-        seq_id = fi_handle.readline()
-        seq = fi_handle.readline().strip()  # 注意末尾有换行
-        max_len = len(seq)
-        tmp_dict[seq_id] = seq
-    """末尾挪到开头"""
-    n2 = args.number2
-    last = seq[-n2:]
-    # print(last+seq.rstrip(last)) #可能会产生bug
-    s = ''
-    tmp_list = list(seq)
-    for i in range(n2):
-        tmp_list.pop()  # pop函数默认返回被删除的值  直接用就好
-    for i in tmp_list:
-        s += i
-    new_seq = last+s
-    # print(s)
-    with open(os.path.join(indir_path, file_prefix+'.fsa2'), 'w') as fo_handle:
-        fo_handle.write(seq_id)
-        fo_handle.write(new_seq+'\n')
-
-# #############################################################################处理注释信息
-
-"""平移的主函数"""
-fi = open(args.input, 'r')
-abs_path = os.path.abspath(args.input)
-indir_path = os.path.dirname(abs_path)
-tmp_path = os.path.join(indir_path, 'tmp')
-tmp = open(tmp_path, 'w')
-ln = args.line_number
-n1 = args.number1
-n2 = args.number2
-for i in range(0, ln-1):  # 前(ln-1)行平移n1距离,从第ln行开始平移n2距离
-    line = fi.readline()
-    new_line = get_new_line(line, n1, max_len)
-    tmp.write(new_line)
-for line in fi:
-    if line.strip() != '':  # 20220609 考虑输入的注释信息 下面有几行空行
-        new_line = get_new_line(line, n2, max_len)
-        tmp.write(new_line)
-print('\n')
-fi.close()
-tmp.close()
-
-
 # 排序的子函数
 def pos_sort(input_file, output_file):
     fi = open(input_file, 'r')  # 打开tmp
@@ -206,4 +157,87 @@ def pos_sort(input_file, output_file):
     return 0
 
 
-pos_sort(tmp_path, args.output)
+# fasta文件 ###################################################################挪动碱基 -n2 -fa   其他一概不输
+if args.line_number == 1 and args.number2 > 0 and args.infasta:  # 仅考虑把末尾n2 bp碱基挪到开头
+    abs_path = os.path.abspath(args.infasta)
+    indir_path = os.path.dirname(abs_path)
+    file_prefix = os.path.basename(args.infasta).split('.')[0]
+    with open(args.infasta, 'r') as fi_handle:
+        tmp_dict = {}
+        seq_id = fi_handle.readline()
+        seq = fi_handle.readline().strip()  # 注意末尾有换行
+        max_len = len(seq)
+        tmp_dict[seq_id] = seq
+    """末尾挪到开头"""
+    n2 = args.number2
+    last = seq[-n2:]
+    # print(last+seq.rstrip(last)) #可能会产生bug
+    s = ''
+    tmp_list = list(seq)
+    for i in range(n2):
+        tmp_list.pop()  # pop函数默认返回被删除的值  直接用就好
+    for i in tmp_list:
+        s += i
+    new_seq = last+s
+    # print(s)
+    with open(os.path.join(indir_path, file_prefix+'.fsa2'), 'w') as fo_handle:
+        fo_handle.write(seq_id)
+        fo_handle.write(new_seq+'\n')
+
+
+# info #############################################################################平移并排序 -n2 -i -o
+if args.line_number and args.number2 and args.ininfo:
+    if args.number2 > 0 or args.number2 < 0:
+        if args.maxlen:
+            max_len = args.maxlen
+        """平移的主函数"""
+        fi = open(args.ininfo, 'r')
+        abs_path = os.path.abspath(args.ininfo)
+        indir_path = os.path.dirname(abs_path)
+        tmp_path = os.path.join(indir_path, 'tmp')
+        tmp = open(tmp_path, 'w')
+        ln = args.line_number
+        n1 = args.number1
+        n2 = args.number2
+        for i in range(0, ln-1):  # 前(ln-1)行平移n1距离,从第ln行开始平移n2距离
+            line = fi.readline()
+            new_line = get_new_line(line, n1, max_len)
+            tmp.write(new_line)
+        for line in fi:
+            if line.strip() != '':  # 20220609 考虑输入的注释信息 下面有几行空行
+                new_line = get_new_line(line, n2, max_len)
+                tmp.write(new_line)
+        print('\n')
+        fi.close()
+        tmp.close()
+        pos_sort(tmp_path, args.outinfo)
+
+
+# info ###################################################仅排序注释 -i -o   其他一概不输
+if args.ininfo and args.outinfo and (not args.number2):
+    """一些稍后用到的路径"""
+    out_dir_path = os.path.dirname(args.outinfo)
+    """tmp_info路径"""
+    tmp_outinfo_path = args.outinfo+'_tmp'
+    pos_sort(args.ininfo, tmp_outinfo_path)
+
+    """判断注释文件格式是否有问题"""  # 20220615 添加以下部分
+    with open(tmp_outinfo_path, 'r') as tmp_handle:
+        for line in tmp_handle:
+            # 换行符也是一个元素  tRNA1 \t 17-91:- \t tRNA-His \t \n
+            if line.startswith('tRNA') and len(line.split('\t')) < 5:
+                trn_flag = False
+                break
+            elif line.startswith('tRNA') and len(line.split('\t')) > 4:
+                trn_flag = True
+                break
+    """进一步处理"""
+    print(trn_flag)
+    if trn_flag == True:  # 没问题 写进输出文件
+        with open(tmp_outinfo_path, 'r') as tmp_handle, open(args.outinfo, 'w') as outinfo_handle:
+            content = tmp_handle.read()
+            outinfo_handle.write(content)
+    """
+    else:  # 有问题   修改
+        search_trna_codon()
+    """
