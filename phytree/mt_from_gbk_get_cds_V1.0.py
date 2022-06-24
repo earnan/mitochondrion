@@ -15,7 +15,7 @@
 ##########################################################
 from Bio import SeqIO
 from Bio.Seq import Seq
-from icecream import ic
+#from icecream import ic
 import argparse
 import linecache
 import os
@@ -145,6 +145,7 @@ def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及
 
 
 def gene_name_standardization(gene_name):  # 格式化基因名字,可重复使用
+    name_flag = 0
     all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
                            'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
     all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
@@ -154,18 +155,19 @@ def gene_name_standardization(gene_name):  # 格式化基因名字,可重复使�
     else:
         i = 0
         while i < 13:
-            if all_gene_list_lower[i] == gene_name:
+            # 20220624  JN619347.gbk 有一个nad4L 大小写混合 就离谱
+            if all_gene_list_lower[i] == gene_name.lower():
                 gene_name = all_gene_list_upper[i]
                 break
             else:
                 i += 1
         if i >= 13:
-            print(gene_name)
-            print('WARNING!Please check!')
-    return gene_name
+            print(gene_name, 'WARNING!Please check!')
+            name_flag = 1
+    return gene_name, name_flag
 
 
-def get_cds(gbk_file, flag, dict_gene_len):  # 解析gbk文件获取cds
+def get_cds(gbk_file, flag, dict_gene_len, file_no):  # 解析gbk文件获取cds
     """完整基因组"""
     seq_record = SeqIO.read(gbk_file, "genbank")
     complete_seq = str(seq_record.seq)
@@ -184,19 +186,22 @@ def get_cds(gbk_file, flag, dict_gene_len):  # 解析gbk文件获取cds
             # list_gene_name.append(tmp_gene_name)  # 本次的基因名字 复用,线粒体的话,在下一部分存入列表
             cds_fasta += format_fasta(cds_note, cds_seq, 70)
             gene_name = tmp_gene_name
-            gene_name = gene_name_standardization(gene_name)
+            gene_name, name_flag = gene_name_standardization(gene_name)
+            if name_flag == 1:
+                print(gbk_file, 'WARNING!Please check!')
             list_gene_name.append(gene_name)  # 存入列表
             dict_gene_len[gene_name].append(
                 3*(len(ele.qualifiers['translation'][0])+1))  # cds序列长度
             if (flag):  # ele有可能是trna,要确保先找到一个cds后才能退出,所以放上面if的下一级
                 break
     file_name = os.path.basename(gbk_file)
-    s = '{0}有{1}个CDS'.format(file_name, count)
+    s = '{2}: {0}有{1}个CDS'.format(file_name, count, file_no)
     if count == 0:
-        s = '-----------------------Warning!!! {0}有{1}个CDS-----------------------\n-----------------------There may be no comments!!!-----------------------'.format(
-            file_name, count)
+        s = '-----------------------Warning!!! {2}: {0}有{1}个CDS-----------------------\n-----------------------There may be no comments!!!-----------------------'.format(
+            file_name, count, file_no)
     print(s)
-    print(list_gene_name)
+    if count != 0:
+        print('exist', list_gene_name)
     return cds_fasta, complete_fasta, count, file_name, list_gene_name, s, dict_gene_len, seq_id
 
 
@@ -225,6 +230,8 @@ if __name__ == '__main__':
     #################################################################
     print('\n')
 
+    if not os.path.exists(args.output):
+        os.mkdir(args.output)
     """写入统计文件"""
     with open((args.output+os.sep+'log'), 'w') as f_log:
         f_log.write(
@@ -245,14 +252,14 @@ if __name__ == '__main__':
     dict_file_cds_count = {}  # 每个文件中cds计数
     file_list = os.listdir(args.input)
     file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
-    if os.path.exists(args.output) == False:
-        os.mkdir(args.output)
 
     """主程序"""
+    file_no = 0
     for file in file_list:
+        file_no += 1
         ingbk_path = os.path.join(args.input, file)
         cds_fasta, complete_fasta, count, file_name,  list_gene_name, s, dict_gene_len, seq_id = get_cds(
-            ingbk_path, False, dict_gene_len)
+            ingbk_path, False, dict_gene_len, file_no)
         dict_file_cds_count[seq_id] = count  # 每个文件中cds计数
         """写入文件"""
         with open((args.output+os.sep+seq_id+'.fasta'), 'wb') as f_complete, \
@@ -274,7 +281,8 @@ if __name__ == '__main__':
                 else:
                     f_log.write('NULL'+'\t')
                     list_missing_gene.append(all_gene_list_upper[i])  # 缺失的基因
-            print(list_missing_gene)
+            if len(list_missing_gene) != 0:
+                print('Miss', list_missing_gene)
             f_log.write('\n')
             [f_log.write(tmp+'\t') for tmp in list_missing_gene]
             f_log.write('\n')
