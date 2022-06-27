@@ -29,9 +29,9 @@ python3    mt_from_gbk_get_cds.py\n\
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--input',
-                      metavar='[dir]', help='输入gbk所在目录', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\gbk', required=False)
+                      metavar='[dir]', help='输入gbk所在目录', type=str, required=False)
 optional.add_argument('-o', '--output',
-                      metavar='[dir]', help='输出的路径', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\out', required=False)
+                      metavar='[dir]', help='输出的路径', type=str,  required=False)
 optional.add_argument('-c', '--check', help='是否用GAP构造序列,默认否,使用时-c',
                       action='store_true', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
@@ -88,7 +88,9 @@ def merge_sequence(ele, complete_seq):  # 合并获取到的序列,用于函数(
 def get_complete_note(seq_record):  # 获取整个完整基因组ID
     seq_id = ''
     # if seq_record.description.find('chloroplast'):#有bug,用str格式化后就没问题了
-    if str(seq_record.description).find('chloroplast') or seq_record.description.split(',')[-2].split()[-1] == 'chloroplast' or seq_record.description.split(',')[-2].split()[-1] == 'plastid':
+    # 20220627 if str(seq_record.description).find('chloroplast') -1也成立,判断时一定要以False True为准
+    # or seq_record.description.split(',')[-2].split()[-1] == 'chloroplast' or seq_record.description.split(',')[-2].split()[-1] == 'plastid':
+    if str(seq_record.description).find('chloroplast') > 0:
         seq_id = seq_record.description.split(
             'chloroplast')[0].replace(' ', '_').rstrip('_')
         name = seq_record.name
@@ -97,20 +99,30 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
         elif seq_id != name:
             seq_id = seq_id+'_'+name
         complete_note = ">" + seq_id + "\n"
-    elif seq_record.description.split(',')[-2].split()[-1] == 'mitochondrion':
+    # or seq_record.description.split(',')[-2].split()[-1] == 'mitochondrion':
+    elif str(seq_record.description).find('mitochondrion') > 0:
+
         seq_id = seq_record.description.split(
-            'mitochondrion')[0].replace(' ', '_').rstrip('_')
-        name = seq_record.name
+            'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 物种或样品名
+
+        if seq_id.startswith('UNVERIFIED:_'):  # 去掉 UNVERIFIED:_
+            seq_id = seq_id.lstrip('UNVERIFIED:_')
+        if len(seq_id.split(':')) > 1:  # 去掉Cerion_watlingense_voucher_USNM:1514170_MN904501 中 冒号后的内容
+            seq_id = seq_id.split(':')[0]
+
+        name = seq_record.name  # 要么是登录号  要么是样本
+
         if seq_id == name:
             seq_id = seq_id
         elif seq_id != name:
             seq_id = seq_id+'_'+name
         complete_note = ">" + seq_id + "\n"
     else:
-        print('WARNING! {}!'.format(
+        print('Genome Type WARNING! {}!'.format(
             seq_record.description.split(', ')[-2].split()[-1]))
         complete_note = ">" + (seq_record.description.split('chloroplast')
                                [0]).replace(' ', '_').rstrip('_') + "\n"
+
     return complete_note, seq_id
 
 
@@ -171,8 +183,10 @@ def get_cds(gbk_file, flag, dict_gene_len, file_no):  # 解析gbk文件获取cds
     """完整基因组"""
     seq_record = SeqIO.read(gbk_file, "genbank")
     complete_seq = str(seq_record.seq)
+
     complete_note, seq_id = get_complete_note(seq_record)
     complete_fasta = format_fasta(complete_note, complete_seq, 70)  # 70换行本例不采用
+
     """cds序列"""
     count = 0  # 对cds数量计数
     cds_fasta = ""
@@ -202,6 +216,7 @@ def get_cds(gbk_file, flag, dict_gene_len, file_no):  # 解析gbk文件获取cds
     print(s)
     if count != 0:
         print('exist', list_gene_name)
+
     return cds_fasta, complete_fasta, count, file_name, list_gene_name, s, dict_gene_len, seq_id
 
 
@@ -217,7 +232,7 @@ def create_gene_by_gap(dict_missing_gene, dict_gene_len, cds_file_path):  # 用g
         print(cds_fasta)
         file_name = (i.split('_')[-2]+'_' +
                      i.split('_')[-1]+'.1').lstrip('>')
-        with open(cds_file_path, 'ab+') as f_cds:
+        with open(cds_file_path, 'ab+') as f_cds:  # 读写打开一个二进制文件，允许读，或在文件末追加数据
             f_cds.write(cds_fasta.encode())
 
 
@@ -263,7 +278,7 @@ if __name__ == '__main__':
         dict_file_cds_count[seq_id] = count  # 每个文件中cds计数
         """写入文件"""
         with open((args.output+os.sep+seq_id+'.fasta'), 'wb') as f_complete, \
-                open((args.output+os.sep+file_name.rstrip('.gbk')+'_cds.fasta'), 'wb') as f_cds, \
+                open((args.output+os.sep+'cds_'+file_name.rstrip('.gbk')+'.fasta'), 'wb') as f_cds, \
                 open((args.output+os.sep+'log'), 'a+') as f_log:
             f_cds.write(cds_fasta.encode())
             f_complete.write(complete_fasta.encode())
