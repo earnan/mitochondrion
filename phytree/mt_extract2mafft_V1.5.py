@@ -5,7 +5,7 @@
 #       Filename:   mt_extract2mafft.py
 #         Author:   yujie
 #    Description:   mt_extract2mafft.py
-#        Version:   1.0
+#        Version:   1.5
 #           Time:   2022/03/28 17:00:58
 #  Last Modified:   2022/03/28 17:00:58
 #        Contact:   hi@arcsona.cn
@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
 \npython3   mt_extract2mafft.py\n\
 提取同名基因序列\n\
 mafft比对\n\
-V1.0串行运行')
+V1.5串行运行')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument('-i', '--input',
@@ -33,8 +33,8 @@ optional.add_argument('-i', '--input',
 optional.add_argument('-o1', '--outdir1',
                       metavar='[dir]', help='序列提取后存放位置', type=str, default='F:\\ref_tre\\gene\\blast\\fasta', required=False)
 optional.add_argument('-o2', '--outdir2',
-                      metavar='[dir]', help='比对好的序列', type=str, default='F:\\ref_tre\\gene\\mafft', required=False)
-optional.add_argument('-c1', '--flag1', help='run step 1?默认是,不运行则-c1',
+                      metavar='[dir]', help='比对好的序列,需要-c2', type=str, default='F:\\ref_tre\\gene\\mafft', required=False)
+optional.add_argument('-c1', '--flag1', help='run step 1(其实就是输出到outdir1目录)?默认必须运行,不运行则-c1',
                       action='store_false', required=False)
 optional.add_argument('-c2', '--flag2', help='是否运行mafft?默认否,运行则-c2 ',
                       action='store_true', required=False)
@@ -89,18 +89,22 @@ def gene_name_standardization(gene_name):
     else:
         i = 0
         while i < 13:
-            if all_gene_list_lower[i] == gene_name:
+            if all_gene_list_lower[i] == gene_name.lower():
                 gene_name = all_gene_list_upper[i]
                 break
             else:
                 i += 1
         if i >= 13:
-            print(gene_name)
-            print('WARNING!Please check!')
+            print(gene_name, 'WARNING!Please check!')
     return gene_name
 
 
 if __name__ == '__main__':
+    if not os.path.exists(args.outdir1):
+        os.mkdir(args.outdir1)
+    if not os.path.exists(args.outdir2):
+        os.mkdir(args.outdir2)
+
     if args.flag1:
         all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
                                'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
@@ -113,7 +117,9 @@ if __name__ == '__main__':
         file_list = os.listdir(args.input)
         file_list.sort()
         for file in file_list:
-            species_id = file.replace('_cds.fasta', '')
+            #species_id = file.replace('_cds.fasta', '')
+            species_id = file.lstrip('cds_').replace(
+                '.fasta', '')  # 20220627 随上一个脚本更改
             # ic(species_id)
             infasta = os.path.join(args.input, file)
             with open(infasta, 'r') as fi:
@@ -150,6 +156,7 @@ if __name__ == '__main__':
                 f.write(dict_gene_id_seq[i].encode())
 
     if args.flag2:
+
         #########################################
         file_list1 = os.listdir(args.outdir1)
         file_list1.sort()
