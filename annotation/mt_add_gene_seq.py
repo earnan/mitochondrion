@@ -58,20 +58,6 @@ def read_file(infasta):  # 读取文件
     return seq
 
 
-def format_pos(pos_str):  # 读取输入的位置为位置列表
-    pos_list = []
-    content = pos_str.split(';')
-    for ele in content:
-        if ele.split(':')[-1] == '-':
-            tmp = ele.split(':')[0]+':'+'-1'
-            pos_list.append(tmp)
-        elif ele.split(':')[-1] == '+':
-            tmp = ele.split(':')[0]+':'+'1'
-            pos_list.append(tmp)
-    # print(pos_list)
-    return pos_list
-
-
 def ir(s):  # 反向互补
     re = s[::-1]  # 字符串反向
     c = ""  # 定义字符串c接收互补序列
@@ -87,9 +73,36 @@ def ir(s):  # 反向互补
     return c
 
 
+def format_pos(pos_str):  # 读取输入的位置为位置列表
+    pos_list = []
+    content = pos_str.split(';')
+    for ele in content:
+        if ele.split(':')[-1] == '-':
+            tmp = ele.split(':')[0]+':'+'-1'
+            pos_list.append(tmp)
+        elif ele.split(':')[-1] == '+':
+            tmp = ele.split(':')[0]+':'+'1'
+            pos_list.append(tmp)
+    # print(pos_list)
+    return pos_list
+
+
 def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下位置顺序
     """pos_list 某基因格式化的位置"""
     """seq 全长序列"""
+
+    # 20220629新增
+    """判断是否是trna,返回一个flag"""
+    flag_gene_type = 0
+    len_trna_type = 0
+    if len(pos_list) == 1:
+        start = pos_list[0].split(':')[0].split('-')[0]
+        end = pos_list[0].split(':')[0].split('-')[-1]
+        len_trna_type = abs(int(end)-int(start))+1
+        if 55 <= len_trna_type <= 100:
+            # pos_list[0].split(':')[0]   14323-1527
+            flag_gene_type = 1
+
     # -----------------20220523 解决跨首尾基因
     seq_len = len(seq)
     if int(pos_list[0].split(':')[-1]) == 1 and int(pos_list[0].split(':')[0].split('-')[0]) > int(pos_list[0].split(':')[0].split('-')[-1]):  # 14323-1527:1
@@ -118,7 +131,7 @@ def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下�
             cds_seq += seq[start_index:end_index]
             # ic(cds_seq)
     # print(pos_list)
-    return cds_seq, pos_list
+    return cds_seq, pos_list, flag_gene_type, len_trna_type
 
 #######################################################################################################################
 
@@ -226,13 +239,17 @@ def get_new_pos(tmp_pos_list, inter_number):
 
 # 命令行传参 *.fas/"1-10:-;20-30:-"/翻译/递归计数/最大递归次数
 def loop_look(infasta, posstr, flag1, loop_count, maxnumber, n):
+    inter_number = False  # 20220629 add  初始值为false
+
     seq = read_file(infasta)
     pos_list = format_pos(posstr)
-    cds_seq, tmp_pos_list = merge_sequence(
+    cds_seq, tmp_pos_list, flag_gene_type, len_trna_type = merge_sequence(
         pos_list, seq)  # tmp_pos_list  把位置当列表再传出来,这个位置信息向下传递
     print('\n'+cds_seq)
+    if flag_gene_type == 1:  # 20220629 add
+        print('\nType: tRNA  Len: '+str(len_trna_type)+'\n')
 
-    if flag1:  # 翻译
+    if flag1 and (flag_gene_type != 1):  # 翻译
         tmp_flag, inter_number = trans2acid(cds_seq, n)
         if tmp_flag == 0:
             if len(posstr.split(';')) != len(tmp_pos_list):  # 忘了???
@@ -309,7 +326,8 @@ if __name__ == '__main__':
     loop_count = 0  # 控制递归次数,在loop_look函数外部定义全局变量   递归的计数
     tmp_pos_list, inter_number = loop_look(
         args.infasta, args.posstr, args.flag1, loop_count, args.maxnumber, args.codonnumber)
-    get_new_pos(tmp_pos_list, inter_number)
+    if type(inter_number) == type(1):
+        get_new_pos(tmp_pos_list, inter_number)
     """
     ###############################################################
     end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
