@@ -43,8 +43,10 @@ optional.add_argument(
     '-n', '--codonnumber', metavar='[codon_number]', help='密码子表,默认5', type=int, default=5, required=False)
 optional.add_argument(
     '-m', '--maxnumber', metavar='[max_number]', help='最大递归查找次数,默认0,假查找', type=int, default=0, required=False)
-optional.add_argument('-trans', '--trans_flag', help='翻译?默认是,不运行则-c1',
-                      action='store_false', required=False)
+optional.add_argument('-trans', '--trans_flag',
+                      help='翻译?默认是,不运行则-c1', action='store_false', required=False)
+optional.add_argument('-sf', '--file_name',
+                      metavar='[store 2 file]', help='默认否,值为0,存储则输入gene名', type=str,  default='0', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -238,7 +240,7 @@ def get_new_pos(tmp_pos_list, inter_number):
 
 
 # 命令行传参 *.fas/"1-10:-;20-30:-"/翻译/递归计数/最大递归次数
-def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n):
+def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, file_name):
     inter_number = False  # 20220629 add  初始值为false
 
     seq = read_file(infasta)
@@ -246,8 +248,13 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n):
     cds_seq, tmp_pos_list, flag_gene_type, len_trna_type = merge_sequence(
         pos_list, seq)  # tmp_pos_list  把位置当列表再传出来,这个位置信息向下传递
     print('\n'+cds_seq)
-    if flag_gene_type == 1:  # 20220629 add
+
+    if flag_gene_type == 1:  # 20220629   trna 存起来
         print('\nType: tRNA  Len: '+str(len_trna_type)+'\n')
+        current_abs_path = os.getcwd()
+        if file_name != '0':
+            with open(os.path.join(current_abs_path, file_name), 'w') as f_handle:
+                f_handle.write(cds_seq+'\n')
 
     if trans_flag and (flag_gene_type != 1):  # 翻译
         tmp_flag, inter_number = trans2acid(cds_seq, n)
@@ -281,7 +288,7 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n):
                 new_posstr = input('与上次命令行输入-6bp new pos: ')  # 先改手动输入,以后改自动
                 if loop_count <= maxnumber:
                     loop_look(infasta, new_posstr, trans_flag,
-                              loop_count, maxnumber, n)
+                              loop_count, maxnumber, n, file_name)
             else:
                 start_flag = True
                 new_posstr = input('与上次命令行输入 -3bp 为正确位置: ')  # 先改手动输入,以后改自动
@@ -297,7 +304,7 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n):
 
             if loop_count <= maxnumber:
                 loop_look(infasta, new_posstr, trans_flag,
-                          loop_count, maxnumber, n)
+                          loop_count, maxnumber, n, file_name)
             else:
                 print('{}次查找未有结果,取消第{}次查找'.format(loop_count-1, loop_count))
 
@@ -326,7 +333,7 @@ if __name__ == '__main__':
     """
     loop_count = 0  # 控制递归次数,在loop_look函数外部定义全局变量   递归的计数
     tmp_pos_list, inter_number = loop_look(
-        args.infasta, args.posstr, args.trans_flag, loop_count, args.maxnumber, args.codonnumber)
+        args.infasta, args.posstr, args.trans_flag, loop_count, args.maxnumber, args.codonnumber, args.file_name)
     if type(inter_number) == type(1):
         get_new_pos(tmp_pos_list, inter_number)
     """
