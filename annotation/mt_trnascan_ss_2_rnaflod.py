@@ -23,8 +23,9 @@ import time
 parser = argparse.ArgumentParser(
     add_help=False, usage='\
 \npython3   mt_trnascan_ss_2_rnaflod.py\n\
-step1\n\
-step2\n\
+1.利用tRNAscan生成tRNA.ss,.ss进一步解析为.fold格式 输入 -i -n -o\n\
+2.若已有tRNA.ss文件, 输入 -ss -n -o\n\
+3.建议输出目录为 trna.structure/trn\n\
 V1.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
@@ -36,10 +37,6 @@ optional.add_argument(
     '-n', '--table', metavar='[codon table]', help='默认脊椎动物2', type=int, default=2, required=False)
 optional.add_argument(
     '-o', '--outdir', metavar='[outdir]', help='outdir', type=str,  required=False)
-optional.add_argument('-c1', '--flag1', help='run step 1?默认是,不运行则-c1',
-                      action='store_false', required=False)
-optional.add_argument('-c2', '--flag2', help='run step 2?默认否,运行则-c2 ',
-                      action='store_true', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 # ##################################################################################名字映射
@@ -132,5 +129,6 @@ for i in range(1, multiple+1):
         all_str = '>{}\n{}\n{}\n'.format(file_prefix, seq, rnastr)
         fo_handle.write(all_str)
 # ############################################################################################rnaplot画图
-s = "cd trna.structure/trn && for i in *.fold;do echo $i;RNAplot -o svg < $i;done && rename _ss.svg .svg *.svg && rm *.fa *.fold && cd ../../ && rm *.ps"
+s = "cd {} && for i in *.fold;do echo $i;RNAplot -o svg < $i;done && rename _ss.svg .svg *.svg && rm *.fa *.fold && cd ../../ && rm *.ps".format(
+    args.outdir)
 print(s)
