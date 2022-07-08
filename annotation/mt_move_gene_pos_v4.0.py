@@ -24,10 +24,14 @@ import time
 parser = argparse.ArgumentParser(
     add_help=False, usage='\
 \npython3   线粒体平移基因修改位置V4.0\n\
-不分开操作,则n1=0,n2有效\n\
-即输入-n2 x 即可\n\
-E:\OneDrive\jshy信息部\Script\mitochondrion\annotation\mt_move_gene_pos_v4.0.py\n\
-V4.0')
+\n\
+1.对注释 平移+排序,输入 -i -o -n2 \n\
+2.对注释  排序,输入 -i -o \n\
+3.对序列  平移  -fa  -n2 \n\
+4.不分段操作,则n1=0,n2有效\n\
+\n\
+Path: E:\OneDrive\jshy信息部\Script\mitochondrion\annotation\mt_move_gene_pos_v4.0.py\n\
+Version: V4.0')
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
@@ -41,9 +45,9 @@ optional.add_argument(
 optional.add_argument(
     '-n1', '--number1', metavar='[int]', type=int, help='平移距离1,可能不用输入',  required=False)
 optional.add_argument(
-    '-n2', '--number2', metavar='[int]', type=int, help='平移距离2,一定要输入',  required=False)
+    '-n2', '--number2', metavar='[int]', type=int, help='平移距离2,一定要输入', default=0,  required=False)
 optional.add_argument(
-    '-m', '--maxlen', metavar='[len(fasta)]', type=int, help='只对注释平移排序,需要输入-i -o -n2 -m',  required=False)
+    '-m', '--maxlen', metavar='[len(fasta)]', type=int, help='基因组长度',  required=False)
 optional.add_argument(
     '-h1', '--info', metavar='[完整的帮助信息]', type=bool, help="使用时'-h1 1'即可", default='', required=False)
 optional.add_argument('-h', '--help', action='help', help='帮助信息')
@@ -222,13 +226,15 @@ if args.ininfo and args.outinfo and (not args.number2):
     pos_sort(args.ininfo, tmp_outinfo_path)
 
     """判断注释文件格式是否有问题"""  # 20220615 添加以下部分
+    """判断trna一行是否有问题"""  # 20220708 对以下部分进行解释
     with open(tmp_outinfo_path, 'r') as tmp_handle:
         for line in tmp_handle:
             # 换行符也是一个元素  tRNA1 \t 17-91:- \t tRNA-His \t \n
-            if line.startswith('tRNA') and len(line.split('\t')) < 5:
+            # 20220708  重新修改判断,缺少反密码子
+            if line.startswith('tRNA') and (not line.split('\t')[2].split('-')[-1].isupper()):
                 trn_flag = False
                 break
-            elif line.startswith('tRNA') and len(line.split('\t')) > 4:
+            elif line.startswith('tRNA') and line.split('\t')[2].split('-')[-1].isupper():
                 trn_flag = True
                 break
     """进一步处理"""
