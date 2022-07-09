@@ -247,3 +247,4 @@ if args.ininfo and args.outinfo and (not args.number2):
     else:  # 有问题   修改
         search_trna_codon()
     """
+qqqqqqq
