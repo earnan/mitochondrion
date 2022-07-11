@@ -101,9 +101,9 @@ def gene_name_standardization(gene_name):
 
 if __name__ == '__main__':
     if not os.path.exists(args.outdir1):
-        os.mkdir(args.outdir1)
+        os.makedirs(args.outdir1)
     if not os.path.exists(args.outdir2):
-        os.mkdir(args.outdir2)
+        os.makedirs(args.outdir2)
 
     if args.flag1:
         all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
