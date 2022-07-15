@@ -14,12 +14,13 @@
 ##########################################################
 from Bio import SeqIO
 from Bio.Seq import Seq
-from icecream import ic
+#from icecream import ic
 import argparse
 import linecache
 import os
 import re
 import time
+import sys
 
 parser = argparse.ArgumentParser(
     add_help=False, usage='\
@@ -207,15 +208,21 @@ def gene_count_check(gene_list):  # 第三步,检查缺失和多余的基因
 
 def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tablenumber):
     with open(in_path, 'r') as in_handle, open(out_path, 'w') as out_handle:
-        """计数"""
-        count, cds_n, trn_n, rrn_n, dloop_n, ol_n = 0, 0, 0, 0, 0, 0
-        """跳过第一行"""
-        line = in_handle.readline()
+        """初始化"""
         cds_ovl_dict = {}  # 用于存储有overlap的cds
         gene_list = []  # 存储所有基因
         gene_pos_dict = {}  # 存储所有基因及其位置
         gene_lenth_dict = {}  # 存储所有基因长度的字典
         tmp_line_number_list = []  # 起止密码子有问题的行数
+        """计数"""
+        count, cds_n, trn_n, rrn_n, dloop_n, ol_n = 0, 0, 0, 0, 0, 0
+        """跳过第一行 需要提示"""
+        line = in_handle.readline()
+        if not line.startswith('Name'):
+            print(
+                'Wrong format! Please add head!\nName	Start	Stop	Strand	Length	ovl/nc	Codons	Infos')
+            # 终止程序
+            sys.exit(0)  # 0：正常退出 1：异常退出
         for line in in_handle:
             count += 1
             """分割赋值"""
@@ -309,6 +316,7 @@ def pw(s, out_path=args.outfile):
 # ###########################################################################################################################################主函数
 print('\n')
 cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, ol_n, gene_lenth_dict, count, tmp_line_number_list = tbl_format_parse()  # 1
+print(gene_list)
 pw('\n')
 pw('--------------------------Step 1 Check flag tag!--------------------------')
 pw(str(tmp_line_number_list))
