@@ -25,10 +25,13 @@ parser = argparse.ArgumentParser(
     add_help=False, usage='\
 \npython3   线粒体平移基因修改位置V4.0\n\
 \n\
+0.不分段操作,则n1=0,n2有效\n\
 1.对注释 平移+排序,输入 -i -o -n2 \n\
 2.对注释  排序,输入 -i -o \n\
 3.对序列  平移  -fa  -n2 \n\
-4.不分段操作,则n1=0,n2有效\n\
+\n\
+0.分段操作,建议手动修改fsa\n\
+1.对注释 平移+排序,输入 -i -o -ln -n1 -n2 -m\n\
 \n\
 Path: E:\OneDrive\jshy信息部\Script\mitochondrion\annotation\mt_move_gene_pos_v4.0.py\n\
 Version: V4.0')
