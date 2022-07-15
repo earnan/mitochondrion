@@ -316,7 +316,6 @@ def pw(s, out_path=args.outfile):
 # ###########################################################################################################################################主函数
 print('\n')
 cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, ol_n, gene_lenth_dict, count, tmp_line_number_list = tbl_format_parse()  # 1
-print(gene_list)
 pw('\n')
 pw('--------------------------Step 1 Check flag tag!--------------------------')
 pw(str(tmp_line_number_list))
