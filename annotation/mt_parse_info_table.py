@@ -317,11 +317,13 @@ overlap_check(cds_ovl_dict, gene_list, gene_pos_dict)  # 2
 pw('--------------------------Step 3 Check gene quantity!--------------------------')
 list_missing_cds, list_missing_trna, list_missing_rrna, list_extra_cds, list_extra_trna = gene_count_check(
     gene_list)  # 3
-pw((cds_n,    trn_n,    rrn_n,    dloop_n, ol_n))
-pw(cds_n+trn_n+rrn_n)
-pw(('{}=13+{}-{}'.format(cds_n, len(list_extra_cds), len(list_missing_cds)),
+
+pw('Total:{} CDS:{} tRNA:{} rRNA:{} D-loop:{} OL:{}'.format(cds_n +
+   trn_n+rrn_n, cds_n, trn_n,    rrn_n,    dloop_n, ol_n))
+pw('CDS:{}=13+{}-{} | Extra:{} Len:{} Missing:{}'.format(cds_n, len(list_extra_cds), len(list_missing_cds),
    list_extra_cds, [gene_lenth_dict[i] for i in list_extra_cds], list_missing_cds))
-pw(('{}=22+{}-{}'.format(trn_n, len(list_extra_trna),                            len(list_missing_trna)),
-   list_extra_trna, [gene_lenth_dict[i] for i in list_extra_trna], list_missing_trna, [trna_mapping(i) for i in list_missing_trna]))
-pw(('{}=2-{}'.format(rrn_n, len(list_missing_rrna)), list_missing_rrna))
+pw('tRNA:{}=22+{}-{} | Extra:{} Len:{} Missing:{} Anticodon:{}'.format(trn_n, len(list_extra_trna), len(list_missing_trna), list_extra_trna,
+   [gene_lenth_dict[i] for i in list_extra_trna], list_missing_trna, [trna_mapping(i) for i in list_missing_trna]))
+pw('rRNA:{}=2-{} | Missing:{}'.format(rrn_n,
+   len(list_missing_rrna), list_missing_rrna))
 pw('--------------------------Step 4 Edit gene name!--------------------------\n--------------------------Step 5 Search rrnl 1&2!--------------------------\n--------------------------Step 6 Search D-loop region!--------------------------')
