@@ -38,8 +38,10 @@ optional.add_argument(
     '-m', '--maxnumber', metavar='[max_number]', help='最大递归查找次数,默认0,假查找', type=int, default=0, required=False)
 optional.add_argument('-trans', '--trans_flag',
                       help='翻译?默认是,不运行则-c1', action='store_false', required=False)
-optional.add_argument('-sf', '--file_name',
-                      metavar='[store 2 file]', help='默认否,值为0,存储则输入gene名', type=str,  default='NULL', required=False)
+optional.add_argument('-sn', '--nuc_file_name',
+                      metavar='[store 2 dna]', help='默认否,值为NULL,存储则输入gene名', type=str,  default='NULL', required=False)
+optional.add_argument('-sp', '--pro_file_name',
+                      metavar='[store 2 protein]', help='默认否,值为NULL,存储则输入蛋白名', type=str,  default='NULL', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -80,6 +82,8 @@ def format_pos(pos_str):  # 读取输入的位置为位置列表
             pos_list.append(tmp)
     # print(pos_list)
     return pos_list
+
+#######################################################################################################################
 
 
 def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下位置顺序
@@ -185,7 +189,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
             else:
                 tmp_flag = 0
                 print('------------------------------------------------------------ok')
-    return tmp_flag, inter_number
+    return tmp_flag, inter_number, acid
 
 
 ###################################################################################################################
@@ -227,13 +231,32 @@ def get_new_pos(tmp_pos_list, inter_number):
     #print('get new pos end')
     return 0
 
+#################################################################################################################
+# 存储获取到的dna序列或蛋白
+
+
+def storage_dna(flag_gene_type, len_trna_type, nuc_file_name, cds_seq):  # 20220722 新增子函数
+    if flag_gene_type == 'trna':  # 20220629   trna 存起来
+        print('\nType: tRNA  Len: '+str(len_trna_type)+'\n')
+        current_abs_path = os.getcwd()
+        if nuc_file_name != 'NULL':
+            with open(os.path.join(current_abs_path, nuc_file_name), 'w') as f_handle:
+                f_handle.write(cds_seq+'\n')
+
+    if flag_gene_type == 'NULL':  # 20220722   把 cds 存起来
+        #print('\nType: tRNA  Len: '+str(len_trna_type)+'\n')
+        current_abs_path = os.getcwd()
+        if nuc_file_name != 'NULL':
+            with open(os.path.join(current_abs_path, nuc_file_name), 'w') as f_handle:
+                f_handle.write(cds_seq+'\n')
+    return 0
 
 #################################################################################################################
 # 循环查找
 
 
 # 命令行传参 *.fas/"1-10:-;20-30:-"/翻译/递归计数/最大递归次数
-def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, file_name):
+def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_name, pro_file_name):
     inter_number = False  # 20220629 add  初始值为false
 
     seq = read_file(infasta)
@@ -242,22 +265,15 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, file_name):
         pos_list, seq)  # tmp_pos_list  把位置当列表再传出来,这个位置信息向下传递
     print('\n'+cds_seq)
 
-    if flag_gene_type == 'trna':  # 20220629   trna 存起来
-        print('\nType: tRNA  Len: '+str(len_trna_type)+'\n')
-        current_abs_path = os.getcwd()
-        if file_name != 'NULL':
-            with open(os.path.join(current_abs_path, file_name), 'w') as f_handle:
-                f_handle.write(cds_seq+'\n')
-
-    if flag_gene_type == 'NULL':  # 20220722   把 cds 存起来
-        #print('\nType: tRNA  Len: '+str(len_trna_type)+'\n')
-        current_abs_path = os.getcwd()
-        if file_name != 'NULL':
-            with open(os.path.join(current_abs_path, file_name), 'w') as f_handle:
-                f_handle.write(cds_seq+'\n')
+    storage_dna(flag_gene_type, len_trna_type, nuc_file_name, cds_seq)
 
     if trans_flag and (flag_gene_type != 'trna'):  # 翻译
-        tmp_flag, inter_number = trans2acid(cds_seq, n)
+        tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
+        current_abs_path = os.getcwd()
+        if pro_file_name != 'NULL':
+            with open(os.path.join(current_abs_path, pro_file_name+'.acid'), 'w') as f_handle:
+                f_handle.write(str(acid)+'\n')
+
         if tmp_flag == 0:
             if len(posstr.split(';')) != len(tmp_pos_list):  # 忘了???
                 if len(tmp_pos_list) == 2:
@@ -288,11 +304,11 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, file_name):
                 new_posstr = input('与上次命令行输入-6bp new pos: ')  # 先改手动输入,以后改自动
                 if loop_count <= maxnumber:
                     loop_look(infasta, new_posstr, trans_flag,
-                              loop_count, maxnumber, n, file_name)
+                              loop_count, maxnumber, n, nuc_file_name, pro_file_name)
             else:
                 start_flag = True
                 new_posstr = input('与上次命令行输入 -3bp 为正确位置: ')  # 先改手动输入,以后改自动
-                tmp_flag, inter_number = trans2acid(cds_seq, n)
+                tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
                 print('正确位置: {}'.format(new_posstr))  # 正确的话,此处就再次打印出输入的位置字符串
 
         else:
@@ -304,7 +320,7 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, file_name):
 
             if loop_count <= maxnumber:
                 loop_look(infasta, new_posstr, trans_flag,
-                          loop_count, maxnumber, n, file_name)
+                          loop_count, maxnumber, n, nuc_file_name, pro_file_name)
             else:
                 print('{}次查找未有结果,取消第{}次查找'.format(loop_count-1, loop_count))
 
@@ -333,7 +349,7 @@ if __name__ == '__main__':
     """
     loop_count = 0  # 控制递归次数,在loop_look函数外部定义全局变量   递归的计数
     tmp_pos_list, inter_number = loop_look(
-        args.infasta, args.posstr, args.trans_flag, loop_count, args.maxnumber, args.codonnumber, args.file_name)
+        args.infasta, args.posstr, args.trans_flag, loop_count, args.maxnumber, args.codonnumber, args.nuc_file_name, args.pro_file_name)
     if type(inter_number) == type(1):
         get_new_pos(tmp_pos_list, inter_number)
     """
