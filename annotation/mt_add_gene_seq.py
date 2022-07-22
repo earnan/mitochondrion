@@ -25,8 +25,6 @@ import time
 parser = argparse.ArgumentParser(
     add_help=False, usage='\
 \npython3   mt_add_gene_seq.py\n\
-step1\n\
-step2\n\
 使用起始子循环查找功能,要输入-m 参数\n\
 V2.0')
 optional = parser.add_argument_group('可选项')
@@ -35,10 +33,6 @@ optional.add_argument(
     '-i', '--infasta', metavar='[infasta]', help='输入fasta文件', type=str, default='F:\\4228\\nd06\\ND06127_FULLMT.fsa', required=False)
 optional.add_argument(
     '-p', '--posstr', metavar='[pos_str]', help="输入位置,形如'124353-124892:-;126001-126552:-'", type=str, default='14323-1527:+', required=False)
-# default='14323-14352:+;1-1527:+', required=False)
-# default='68847-69098:-;69781-70072:-;71079-71149:-', required=False)
-# 124842-124892:-;126001-126552:-', required=False)
-# 124353-124892:-;126001-126552:-', required=False)
 optional.add_argument(
     '-n', '--codonnumber', metavar='[codon_number]', help='密码子表,默认5', type=int, default=5, required=False)
 optional.add_argument(
