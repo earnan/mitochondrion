@@ -12,7 +12,6 @@
 #        License:   Copyright (C) 2022
 #
 ##########################################################
-from pickle import TRUE
 from Bio import SeqIO
 from Bio.Seq import Seq
 #from icecream import ic
@@ -40,7 +39,7 @@ optional.add_argument(
 optional.add_argument('-trans', '--trans_flag',
                       help='翻译?默认是,不运行则-c1', action='store_false', required=False)
 optional.add_argument('-sf', '--file_name',
-                      metavar='[store 2 file]', help='默认否,值为0,存储则输入gene名', type=str,  default='0', required=False)
+                      metavar='[store 2 file]', help='默认否,值为0,存储则输入gene名', type=str,  default='NULL', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
@@ -89,7 +88,7 @@ def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下�
 
     # 20220629新增
     """判断是否是trna,返回一个flag"""
-    flag_gene_type = 0
+    flag_gene_type = 'NULL'
     len_trna_type = 0
     if len(pos_list) == 1:
         start = pos_list[0].split(':')[0].split('-')[0]
@@ -97,7 +96,7 @@ def merge_sequence(pos_list, seq):  # 合并获取到的序列,顺便排一下�
         len_trna_type = abs(int(end)-int(start))+1
         if 55 <= len_trna_type <= 100:
             # pos_list[0].split(':')[0]   14323-1527
-            flag_gene_type = 1
+            flag_gene_type = 'trna'
 
     # -----------------20220523 解决跨首尾基因
     seq_len = len(seq)
@@ -243,14 +242,21 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, file_name):
         pos_list, seq)  # tmp_pos_list  把位置当列表再传出来,这个位置信息向下传递
     print('\n'+cds_seq)
 
-    if flag_gene_type == 1:  # 20220629   trna 存起来
+    if flag_gene_type == 'trna':  # 20220629   trna 存起来
         print('\nType: tRNA  Len: '+str(len_trna_type)+'\n')
         current_abs_path = os.getcwd()
-        if file_name != '0':
+        if file_name != 'NULL':
             with open(os.path.join(current_abs_path, file_name), 'w') as f_handle:
                 f_handle.write(cds_seq+'\n')
 
-    if trans_flag and (flag_gene_type != 1):  # 翻译
+    if flag_gene_type == 'NULL':  # 20220722   把 cds 存起来
+        #print('\nType: tRNA  Len: '+str(len_trna_type)+'\n')
+        current_abs_path = os.getcwd()
+        if file_name != 'NULL':
+            with open(os.path.join(current_abs_path, file_name), 'w') as f_handle:
+                f_handle.write(cds_seq+'\n')
+
+    if trans_flag and (flag_gene_type != 'trna'):  # 翻译
         tmp_flag, inter_number = trans2acid(cds_seq, n)
         if tmp_flag == 0:
             if len(posstr.split(';')) != len(tmp_pos_list):  # 忘了???
