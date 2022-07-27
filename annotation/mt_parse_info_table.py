@@ -130,9 +130,9 @@ def codon_check(codon_str, table):  # 第一步,检查cds的起止密码子
 # ##################################################################################################step 2
 
 
-def overlap_check(cds_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cds的overlap
-    pw('--------------------------Step 2 Check cds overlap!--------------------------')
-    for ovl_cds in cds_ovl_dict.keys():
+def overlap_check(cds_ovl_dict, trn_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cds的overlap
+
+    for ovl_cds in cds_ovl_dict.keys():  # cds_ovl_dict
         ovl_cds_index = gene_list.index(ovl_cds)
         if ovl_cds_index+1 >= len(gene_list):
             next_gene = gene_list[0]
@@ -144,6 +144,20 @@ def overlap_check(cds_ovl_dict, gene_list, gene_pos_dict):  # 第二步,检查cd
                 start = gene_pos_dict[ovl_cds].split('-')[0]
                 new_end = int(gene_pos_dict[next_gene].split('-')[0])-1
                 pw('{} pos may be {}-{}:+ '.format(ovl_cds, start, new_end))
+
+    for ovl_trn in trn_ovl_dict.keys():  # 20220727 trn_ovl_dict
+        ovl_trn_index = gene_list.index(ovl_trn)
+        if ovl_trn_index+1 >= len(gene_list):
+            next_gene = gene_list[0]  # 下一个基因是开头
+        else:
+            next_gene = gene_list[ovl_trn_index+1]
+        # 分四种情况,但只需要考虑trna为负的两种情况
+        if not next_gene.startswith('OL') and not next_gene.startswith('OH') and not next_gene.startswith('trn') and not next_gene.startswith('rrn'):
+            if gene_pos_dict[ovl_trn].split(':')[-1] == '-':  # 如果trna是负链的话
+                new_start = int(gene_pos_dict[ovl_trn].split(
+                    '-')[-2].split(':')[0])+1
+                end = gene_pos_dict[next_gene].split('-')[-2]
+                pw('{} pos may be {}-{}- '.format(next_gene, new_start, end))
     return 0
 
 # #########################################################################################step 3
@@ -204,6 +218,7 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tabl
     with open(in_path, 'r') as in_handle, open(out_path, 'w') as out_handle:
         """初始化"""
         cds_ovl_dict = {}  # 用于存储有overlap的cds
+        trn_ovl_dict = {}  # 20220727 用于存储有overlap的trna
         gene_list = []  # 存储所有基因
         gene_pos_dict = {}  # 存储所有基因及其位置
         gene_lenth_dict = {}  # 存储所有基因长度的字典
@@ -244,6 +259,8 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tabl
                 n = 'tRNA'+str(trn_n)
                 name1 = name.strip(')').split(
                     '(')[0]+'-'+name.strip(')').split('(')[1].upper()
+                if int(ovl) < 0:
+                    trn_ovl_dict[name1] = ovl
                 letter = (re.search(r'[A-Z]', name1.split('-')[0])).group(0)
                 name2 = 'tRNA-'+name_mapping(letter)
                 gene_list.append(name1)
@@ -298,7 +315,7 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tabl
             """写入"""
             print(s)
             out_handle.write(s+'\n')
-    return cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, ol_n, gene_lenth_dict, count, tmp_line_number_list
+    return cds_ovl_dict, trn_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, ol_n, gene_lenth_dict, count, tmp_line_number_list
 
 
 def pw(s, out_path=args.outfile):
@@ -309,11 +326,12 @@ def pw(s, out_path=args.outfile):
 
 # ###########################################################################################################################################主函数
 print('\n')
-cds_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, ol_n, gene_lenth_dict, count, tmp_line_number_list = tbl_format_parse()  # 1
+cds_ovl_dict, trn_ovl_dict, gene_list, gene_pos_dict, cds_n,    trn_n,    rrn_n,    dloop_n, ol_n, gene_lenth_dict, count, tmp_line_number_list = tbl_format_parse()  # 1
 pw('\n')
 pw('--------------------------Step 1 Check flag tag!--------------------------')
 pw(str(tmp_line_number_list))
-overlap_check(cds_ovl_dict, gene_list, gene_pos_dict)  # 2
+pw('--------------------------Step 2 Check cds overlap!--------------------------')
+overlap_check(cds_ovl_dict, trn_ovl_dict, gene_list, gene_pos_dict)  # 2
 pw('--------------------------Step 3 Check gene quantity!--------------------------')
 list_missing_cds, list_missing_trna, list_missing_rrna, list_extra_cds, list_extra_trna = gene_count_check(
     gene_list)  # 3
