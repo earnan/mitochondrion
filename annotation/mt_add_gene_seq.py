@@ -24,8 +24,18 @@ import time
 parser = argparse.ArgumentParser(
     add_help=False, usage='\
 \npython3   mt_add_gene_seq.py\n\
-使用起始子循环查找功能,要输入-m 参数\n\
-V2.0')
+\n\
+1.常规使用\n\
+1.1查看密码子 -n -i -p \n\
+\n\
+2.递归查找与存储\n\
+2.1起始子查找,-m 最大查找次数\n\
+2.2存储序列,-sn 基因名\n\
+2.3存储蛋白,-sp 基因名\n\
+\n\
+Path: E:\OneDrive\jshy信息部\Script\mitochondrion\annotation\mt_add_gene_seq.py\n\
+Version: V2.0'
+)
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
