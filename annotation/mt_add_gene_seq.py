@@ -279,8 +279,8 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
     cds_seq, tmp_pos_list, flag_gene_type, len_trna_type = merge_sequence(
         pos_list, seq)  # tmp_pos_list  把位置当列表再传出来,这个位置信息向下传递
     print('\n'+cds_seq)
-    ic(tmp_pos_list)
-    ic(posstr)
+    print(tmp_pos_list)
+    print(posstr)
     storage_dna(flag_gene_type, len_trna_type, nuc_file_name, cds_seq)
 
     if trans_flag and (flag_gene_type != 'trna'):  # 翻译
@@ -322,17 +322,16 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
             # 定义为第二层if else
             if cds_seq[0:3] not in start_codon_list and maxnumber != 0:  # 20220805  如果为假查找，就不进行下一步了
                 start_flag = False
-                ic(tmp_pos_list)
-                ic(posstr)
-
-                new_pos_str = input(
-                    '与上次命令行输入-6bp new pos(末尾输.可重输): ')  # 先改手动输入,以后改自动
-                while new_pos_str.find('.') > 0:  # 20220808
-                    new_pos_str = input(
-                        '与上次命令行输入-6bp new pos(末尾输.可重输): ')
-                    if new_pos_str.find('.') < 0:
-                        continue
-
+                print(tmp_pos_list)
+                print(posstr)
+                # 20220808 以下自动返回位置，也就是开头往后挪6bp
+                if posstr.split(':')[-1] == '+':
+                    new_pos_str = posstr.replace(posstr.split(
+                        '-')[0], str(int(posstr.split('-')[0])+6))
+                elif posstr.split(':')[-1] == '-':
+                    new_pos_str = posstr.replace(re.findall(
+                        r'\d+', posstr)[-1], str(int(re.findall(
+                            r'\d+', posstr)[-1])-6))
                 '''
                 new_pos_str = input(
                     '与上次命令行输入-6bp new pos(末尾输.可重输): ')  # 先改手动输入,以后改自动
