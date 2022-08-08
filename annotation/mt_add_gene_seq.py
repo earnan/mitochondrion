@@ -12,10 +12,10 @@
 #        License:   Copyright (C) 2022
 #
 ##########################################################
-import pretty_errors
+#import pretty_errors
 from Bio import SeqIO
 from Bio.Seq import Seq
-from icecream import ic
+#from icecream import ic
 import argparse
 import linecache
 import os
@@ -286,9 +286,6 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
     if trans_flag and (flag_gene_type != 'trna'):  # 翻译
         tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
         current_abs_path = os.getcwd()
-        if pro_file_name != 'NULL':
-            with open(os.path.join(current_abs_path, pro_file_name+'.acid'), 'w') as f_handle:
-                f_handle.write(str(acid)+'\n')
         # #########################################################################################################################################
         # 第一层if else
         if tmp_flag == 0:  # 起始ok
@@ -301,6 +298,9 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
             else:
                 new_pos_str = posstr
             print('正确位置: {}'.format(new_pos_str))
+            if pro_file_name != 'NULL':
+                with open(os.path.join(current_abs_path, pro_file_name+'.acid'), 'w') as f_handle:
+                    f_handle.write(str(acid)+'\n')
         # #####################################################################################################################################
         # 第一层if else
             """考虑细分情况 20220610考虑起始子错误的查找  其他错误类型暂时不考虑,用原来的程序写死"""
@@ -332,15 +332,7 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                     new_pos_str = posstr.replace(re.findall(
                         r'\d+', posstr)[-1], str(int(re.findall(
                             r'\d+', posstr)[-1])-6))
-                '''
-                new_pos_str = input(
-                    '与上次命令行输入-6bp new pos(末尾输.可重输): ')  # 先改手动输入,以后改自动
-                while new_pos_str.find('.') > 0:  # 20220808
-                    new_pos_str = input(
-                        '与上次命令行输入-6bp new pos(末尾输.可重输): ')
-                    if new_pos_str.find('.') < 0:
-                        continue
-                '''
+
                 if loop_count <= maxnumber:
                     loop_look(infasta, new_pos_str, trans_flag,
                               loop_count, maxnumber, n, nuc_file_name, pro_file_name)
@@ -357,6 +349,9 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                             r'\d+', posstr)[-1])-3))
                 tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
                 print('正确位置: {}'.format(new_pos_str))
+                if pro_file_name != 'NULL':
+                    with open(os.path.join(current_abs_path, pro_file_name+'.acid'), 'w') as f_handle:
+                        f_handle.write(str(acid)+'\n')
         # ################################################################################################################################
         # 第一层if else
         else:
