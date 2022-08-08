@@ -311,13 +311,26 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                                   'AGG', 'TA', 'T', 'AG']  # 2,转录时要加A
             if cds_seq[0:3] not in start_codon_list:
                 start_flag = False
-                new_posstr = input('与上次命令行输入-6bp new pos: ')  # 先改手动输入,以后改自动
+                if maxnumber != 0:  # 20220805  如果为假查找，就不进行下一步了
+                    new_posstr = input(
+                        '与上次命令行输入-6bp new pos(末尾输.可重输): ')  # 先改手动输入,以后改自动
+                    while new_posstr.find('.') > 0:  # 20220808
+                        new_posstr = input(
+                            '与上次命令行输入-6bp new pos(末尾输.可重输): ')
+                        if new_posstr.find('.') < 0:
+                            continue
                 if loop_count <= maxnumber:
                     loop_look(infasta, new_posstr, trans_flag,
                               loop_count, maxnumber, n, nuc_file_name, pro_file_name)
             else:
                 start_flag = True
-                new_posstr = input('与上次命令行输入 -3bp 为正确位置: ')  # 先改手动输入,以后改自动
+                new_posstr = input(
+                    '与上次命令行输入 -3bp 为正确位置(末尾输.可重输): ')  # 先改手动输入,以后改自动
+                while new_posstr.find('.') > 0:  # 输错了
+                    new_posstr = input(
+                        '与上次命令行输入 -3bp 为正确位置(末尾输.可重输): ')
+                    if new_posstr.find('.') < 0:
+                        continue
                 tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
                 print('正确位置: {}'.format(new_posstr))  # 正确的话,此处就再次打印出输入的位置字符串
 
