@@ -3,7 +3,6 @@
 ##########################################################
 #
 #       Filename:   mt_from_gbk_get_cds.py
-# Original Author:  经过多次更改,程序主体与原作者已经无关,可以加上Author
 #         Author:   yujie
 #    Description:   mt_from_gbk_get_cds.py
 #        Version:   1.0
@@ -86,42 +85,75 @@ def merge_sequence(ele, complete_seq):  # 合并获取到的序列,用于函数(
 
 
 def get_complete_note(seq_record):  # 获取整个完整基因组ID
-    seq_id = ''
-    # if seq_record.description.find('chloroplast'):#有bug,用str格式化后就没问题了
-    # 20220627 if str(seq_record.description).find('chloroplast') -1也成立,判断时一定要以False True为准
-    # or seq_record.description.split(',')[-2].split()[-1] == 'chloroplast' or seq_record.description.split(',')[-2].split()[-1] == 'plastid':
-    if str(seq_record.description).find('chloroplast') > 0:
-        seq_id = seq_record.description.split(
-            'chloroplast')[0].replace(' ', '_').rstrip('_')
-        name = seq_record.name
-        if seq_id == name:
-            seq_id = seq_id
-        elif seq_id != name:
-            seq_id = seq_id+'_'+name
-        complete_note = ">" + seq_id + "\n"
-    # or seq_record.description.split(',')[-2].split()[-1] == 'mitochondrion':
-    elif str(seq_record.description).find('mitochondrion') > 0:
+    try:
+        seq_id = ''
+        # if seq_record.description.find('chloroplast'):#有bug,用str格式化后就没问题了
+        # 20220627 if str(seq_record.description).find('chloroplast') -1也成立,判断时一定要以False True为准
+        # or seq_record.description.split(',')[-2].split()[-1] == 'chloroplast' or seq_record.description.split(',')[-2].split()[-1] == 'plastid':
+        if str(seq_record.description).find('chloroplast') > 0:
+            seq_id = seq_record.description.split(
+                'chloroplast')[0].replace(' ', '_').rstrip('_')
+            name = seq_record.name
+            if seq_id == name:
+                seq_id = seq_id
+            elif seq_id != name:
+                seq_id = seq_id+'_'+name
+            complete_note = ">" + seq_id + "\n"
+        # or seq_record.description.split(',')[-2].split()[-1] == 'mitochondrion':
+        elif str(seq_record.description).find('mitochondrion') > 0:
 
-        seq_id = seq_record.description.split(
-            'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 物种或样品名
+            seq_id = seq_record.description.split(
+                'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 物种或样品名
 
-        if seq_id.startswith('UNVERIFIED:_'):  # 去掉 UNVERIFIED:_
-            seq_id = seq_id.lstrip('UNVERIFIED:_')
-        if len(seq_id.split(':')) > 1:  # 去掉Cerion_watlingense_voucher_USNM:1514170_MN904501 中 冒号后的内容
-            seq_id = seq_id.split(':')[0]
+            if seq_id.startswith('UNVERIFIED:_'):  # 去掉 UNVERIFIED:_
+                seq_id = seq_id.lstrip('UNVERIFIED:_')
+            # 去掉Cerion_watlingense_voucher_USNM:1514170_MN904501 中 冒号后的内容
+            if len(seq_id.split(':')) > 1:
+                seq_id = seq_id.split(':')[0]
 
-        name = seq_record.name  # 要么是登录号  要么是样本
+            name = seq_record.name  # 要么是登录号  要么是样本
 
-        if seq_id == name:
-            seq_id = seq_id
-        elif seq_id != name:
-            seq_id = seq_id+'_'+name
-        complete_note = ">" + seq_id + "\n"
-    else:
-        print('Genome Type WARNING! {}!'.format(
-            seq_record.description.split(', ')[-2].split()[-1]))
-        complete_note = ">" + (seq_record.description.split('chloroplast')
-                               [0]).replace(' ', '_').rstrip('_') + "\n"
+            if seq_id == name:
+                seq_id = seq_id
+            elif seq_id != name:
+                seq_id = seq_id+'_'+name
+            complete_note = ">" + seq_id + "\n"
+        else:
+            print('Genome Type WARNING! {}!'.format(
+                seq_record.description.split(', ')[-2].split()[-1]))
+            complete_note = ">" + \
+                (seq_record.description.split('chloroplast')
+                 [0]).replace(' ', '_').rstrip('_') + "\n"
+    except:  # 如果遇到任何出错
+        complete_note = ''
+        #gbk_type = input('genome type(1:chloroplast;2:mitochondrion): ')
+        gbk_type = 2
+        if gbk_type == 1:
+            seq_id = seq_record.description.split(
+                'chloroplast')[0].replace(' ', '_').rstrip('_')
+            name = seq_record.name
+            if seq_id == name:
+                seq_id = seq_id
+            elif seq_id != name:
+                seq_id = seq_id+'_'+name
+            complete_note = ">" + seq_id + "\n"
+        elif gbk_type == 2:
+            seq_id = seq_record.description.split(
+                'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 物种或样品名
+
+            if seq_id.startswith('UNVERIFIED:_'):  # 去掉 UNVERIFIED:_
+                seq_id = seq_id.lstrip('UNVERIFIED:_')
+            # 去掉Cerion_watlingense_voucher_USNM:1514170_MN904501 中 冒号后的内容
+            if len(seq_id.split(':')) > 1:
+                seq_id = seq_id.split(':')[0]
+
+            name = seq_record.name  # 要么是登录号  要么是样本
+
+            if seq_id == name:
+                seq_id = seq_id
+            elif seq_id != name:
+                seq_id = seq_id+'_'+name
+            complete_note = ">" + seq_id + "\n"
 
     return complete_note, seq_id
 
