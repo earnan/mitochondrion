@@ -36,6 +36,8 @@ optional.add_argument('-c', '--check', help='是否用GAP构造序列,默认否,
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
+# ############################################################################################
+
 
 def format_fasta(note, seq, num):
     format_seq = ""
@@ -242,12 +244,14 @@ def get_cds(gbk_file, flag, dict_gene_len, file_no):  # 解析gbk文件获取cds
                 break
     file_name = os.path.basename(gbk_file)
     s = '{2}: {0}有{1}个CDS'.format(file_name, count, file_no)
+
     if count == 0:
-        s = '-----------------------Warning!!! {2}: {0}有{1}个CDS-----------------------\n-----------------------There may be no comments!!!-----------------------'.format(
-            file_name, count, file_no)
-    print(s)
-    if count != 0:
-        print('exist', list_gene_name)
+        # --------There may be no comments--------'.format(
+        s = '{2}: {0}有{1}个CDS'.format(file_name, count, file_no)
+        print(s.ljust(50), '----------There may be no comments----------')
+    elif count != 0:
+        # 20220811 输出左对齐  str.ljust(50)  达到50个字符宽度
+        print(s.ljust(50), '+', list_gene_name)
 
     return cds_fasta, complete_fasta, count, file_name, list_gene_name, s, dict_gene_len, seq_id
 
@@ -328,8 +332,9 @@ if __name__ == '__main__':
                 else:
                     f_log.write('NULL'+'\t')
                     list_missing_gene.append(all_gene_list_upper[i])  # 缺失的基因
-            if len(list_missing_gene) != 0:
-                print('Miss', list_missing_gene)
+            if 1 <= len(list_missing_gene) < 13:
+                print(''.ljust(55), '-', list_missing_gene)
+
             f_log.write('\n')
             [f_log.write(tmp+'\t') for tmp in list_missing_gene]
             f_log.write('\n')
@@ -341,10 +346,10 @@ if __name__ == '__main__':
     total_ref_gene = 0
     for i in dict_file_cds_count.keys():  # 键为seq_id,值为个数
         total_ref_gene += dict_file_cds_count[i]
+    print('\n')
     print(dict_gene_len)  # 键为每个基因,值为列表,列表为每个基因在不同物种中的长度
     print(dict_missing_gene)  # 键为>seq_id,值为列表,列表为每个物种确实的基因
     print(2*(total_ref_gene-13))
-    print('\n')
 
     """gap构造基因"""
     if args.check:
