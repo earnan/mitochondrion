@@ -165,7 +165,7 @@ def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及
     if 'gene' not in ele.qualifiers.keys():
         # 返回上一个基因,好从其他参考找这个没名字的
         tmp_gene_name = input(
-            "\nPrevious: {0}. Current: {1}.\nPlease input current gene name:".format(tmp_gene_name, ele.location.parts))
+            "\nPrevious: [{0}]. Current: {1}.\nPlease input current gene name:".format(tmp_gene_name, ele.location.parts))
     else:
         tmp_gene_name = ele.qualifiers['gene'][0]
 
