@@ -102,8 +102,8 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
                 seq_id = seq_id+'_'+name
             complete_note = ">" + seq_id + "\n"
         # or seq_record.description.split(',')[-2].split()[-1] == 'mitochondrion':
-        elif str(seq_record.description).find('mitochondrion') > 0:
-
+        # 20220811 NC_031548.gbk 描述部分 DEFINITION  Oxynoemacheilus angorae mitochondrial DNA, complete genome.
+        elif str(seq_record.description).find('mitochondrion') > 0 or str(seq_record.description).find('mitochondrial') > 0:
             seq_id = seq_record.description.split(
                 'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 物种或样品名
 
@@ -127,19 +127,11 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
                 (seq_record.description.split('chloroplast')
                  [0]).replace(' ', '_').rstrip('_') + "\n"
     except:  # 如果遇到任何出错
+        print('try/except')
         complete_note = ''
         #gbk_type = input('genome type(1:chloroplast;2:mitochondrion): ')
         gbk_type = 2
-        if gbk_type == 1:
-            seq_id = seq_record.description.split(
-                'chloroplast')[0].replace(' ', '_').rstrip('_')
-            name = seq_record.name
-            if seq_id == name:
-                seq_id = seq_id
-            elif seq_id != name:
-                seq_id = seq_id+'_'+name
-            complete_note = ">" + seq_id + "\n"
-        elif gbk_type == 2:
+        if gbk_type == 2:
             seq_id = seq_record.description.split(
                 'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 物种或样品名
 
@@ -163,10 +155,16 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
 def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及序列
 
     if 'gene' not in ele.qualifiers.keys():
+        # print(ele.qualifiers)
         # 返回上一个基因,好从其他参考找这个没名字的
-        tmp_gene_name = input(
-            "\nPrevious: [{0}]. Current: {1}.\nPlease input current gene name:".format(tmp_gene_name, ele.location.parts))
+        try:
+            #tmp_gene_name = ele.qualifiers['note'][0]
+            print(ele.qualifiers)
+        except:
+            tmp_gene_name = input(
+                "\nPrevious: [{0}]. Current: {1}.\nPlease input current gene name:".format(tmp_gene_name, ele.location.parts))
     else:
+        # print(ele.qualifiers)
         tmp_gene_name = ele.qualifiers['gene'][0]
 
     if len(ele.location.parts) == 3:
@@ -301,7 +299,8 @@ if __name__ == '__main__':
 
     """初始化"""
     dict_file_cds_count = {}  # 每个文件中cds计数
-    file_list = os.listdir(args.input)
+    file_list = [i for i in os.listdir(
+        args.input) if i.endswith('gbk')]  # 20220811 检查文件后缀
     file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
 
     """主程序"""
