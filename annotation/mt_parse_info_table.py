@@ -23,18 +23,24 @@ import time
 import sys
 
 parser = argparse.ArgumentParser(
-    add_help=False, usage='\
+    add_help=False, usage='\n\
 \npython3   mt_parse_info_table.py\n\
-解析网页表格里的注释信息,生成gene.annotation.info\n\
-V1.0')
+解析网页表格里的注释信息,生成gene.annotation.info2\n\
+\n\
+-i [gene.info] -o [gene.annotation.info2] -n [2/5]\n\
+\n\
+Path: E:\OneDrive\jshy信息部\Script\mitochondrion\annotation\mt_parse_info_table.py\n\
+Path: /share/nas1/yuj/script/mitochondrion/annotation/mt_parse_info_table.py\n\
+Version: V1.0'
+)
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--infile', metavar='[infile]', help='infile', type=str, default='F:\\4313\\nano\\nano.txt', required=False)
+    '-i', '--infile', metavar='[infile]', type=str, default='F:\\4313\\nano\\nano.txt', required=False)
 optional.add_argument(
-    '-o', '--outfile', metavar='[outfile]', help='outfile', type=str, default='F:\\4313\\nano\\gene.annotation.info', required=False)
+    '-o', '--outfile', metavar='[outfile]', type=str, default='F:\\4313\\nano\\gene.annotation.info', required=False)
 optional.add_argument(
-    '-n', '--tablenumber', metavar='[codon table]', help='默认2', type=int, default=2, required=False)
+    '-n', '--tablenumber', metavar='[codon table default2]', type=int, default=2, required=False)
 
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
@@ -81,6 +87,7 @@ def name_mapping(s, table=5):  # 名字映射,第5套密码子,name2  其实 2  
 
 
 def trna_mapping(name1):  # trna 映射  临时加的子函数   以后有空再写全
+    # 不如用 re.findall(r'[A-Z]', name1.split('-')[0])[0]
     letter = (re.search(r'[A-Z]', name1.split('-')[0])).group(0)
     name2 = 'tRNA-'+name_mapping(letter)
     return name2
@@ -276,7 +283,7 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tabl
                 gene_pos_dict[name] = '{0}-{1}:{2}'.format(start, end, strand)
                 s = '{0}\t{1}-{2}:{3}'.format(
                     n, start, end, strand)
-            elif line.startswith('OL'):  # ol区  复制起始区域
+            elif line.startswith('OL') or line.startswith('rep_origin'):  # ol区  复制起始区域
                 ol_n += 1
                 n = 'OL'+str(ol_n)
                 gene_list.append(name)
