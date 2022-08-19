@@ -7,7 +7,7 @@
 #    Description:   mt_from_gbk_get_cds.py
 #        Version:   1.0
 #           Time:   2022/03/09 15:21:51
-#  Last Modified:   2022/03/25 14:05:51
+#  Last Modified:   2022/08/19 11:59:10
 #        Contact:   hi@arcsona.cn
 #        License:   Copyright (C) 2022
 #
@@ -18,20 +18,48 @@ from Bio.Seq import Seq
 import argparse
 import linecache
 import os
+#import pretty_errors
 import re
+import sys
 import time
-
+#import copy
 parser = argparse.ArgumentParser(
     add_help=False, usage='\n\
-python3    mt_from_gbk_get_cds.py\n\
-每个物种都生成cds及完整序列2个文件')
+\n\
+##########################################################\n\
+#\n\
+#       Filename:   mt_from_gbk_get_cds_V2.5.py\n\
+#         Author:   yujie\n\
+#    Description:   mt_from_gbk_get_cds_V2.5.py\n\
+#        Version:   2.0\n\
+#           Time:   2022/03/09 15:21:51\n\
+#  Last Modified:   2022/08/19 11:59:10\n\
+#        Contact:   hi@arcsona.cn\n\
+#        License:   Copyright (C) 2022\n\
+#\n\
+##########################################################\n\
+\n\
+\npython3   mt_from_gbk_get_cds_V1.0.py\n\
+功能：每个物种都生成cds及完整序列2个文件\n\
+1.常规使用\n\
+1.1 -i [gbk dir] -o [out dir] \n\
+2.其他使用\n\
+2.1 -c 用GAP构造缺失的cds\n\
+\n\
+##########################################################\n\
+Path: E:\OneDrive\jshy信息部\Script\mitochondrion\phytree\mt_from_gbk_get_cds_V1.0.py\n\
+Path: /share/nas1/yuj/script/mitochondrion/phytree/mt_from_gbk_get_cds_V1.0.py\n\
+Version: 1.0\n\
+##########################################################\n\
+'
+)
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
-optional.add_argument('-i', '--input',
-                      metavar='[dir]', help='输入gbk所在目录', type=str, required=False)
-optional.add_argument('-o', '--output',
-                      metavar='[dir]', help='输出的路径', type=str,  required=False)
-optional.add_argument('-c', '--check', help='是否用GAP构造序列,默认否,使用时-c',
+optional.add_argument(
+    '-i', '--input', metavar='[indir]', help='gbk dir', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\gbk',  required=False)
+optional.add_argument(
+    '-o', '--output', metavar='[outdir]', help='输出的路径', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\cds', required=False)
+optional.add_argument('-c', '--check', help='默认否,使用时-c',
                       action='store_true', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
@@ -89,6 +117,8 @@ def merge_sequence(ele, complete_seq):  # 合并获取到的序列,用于函数(
 def get_complete_note(seq_record):  # 获取整个完整基因组ID
     try:
         seq_id = ''
+        # 20220819 NC_044756.1.gbk voucher Liu HM/CP02 chloroplast  有特殊符号，需要处理
+        seq_record.description = seq_record.description.replace('/', '_')
         # if seq_record.description.find('chloroplast'):#有bug,用str格式化后就没问题了
         # 20220627 if str(seq_record.description).find('chloroplast') -1也成立,判断时一定要以False True为准
         # or seq_record.description.split(',')[-2].split()[-1] == 'chloroplast' or seq_record.description.split(',')[-2].split()[-1] == 'plastid':
