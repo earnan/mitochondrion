@@ -182,19 +182,51 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
     return complete_note, seq_id
 
 
+# 仅在 get_cds_note(ele, complete_seq, seq_id, tmp_gene_name)中使用，以应对"gbk中cds没有/gene标签，但是有/product标签"的情况
+def gene_name_standardization_1(gene_name):  # 格式化基因名字,可重复使用
+    #name_flag = 0
+    all_gene_dict={'1':'11','2':'22'}
+    all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
+                           'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+    all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
+                           'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    gene_name = gene_name.replace('III', '3').replace(
+        'II', '2').replace('I', '1')  # 20220825 gbk文件里 基因名是罗马数字，因此需要先处理
+    if gene_name.upper() in all_gene_list_upper:
+        gene_name = gene_name.upper()
+    else:
+        i = 0
+        while i < 13:
+            # 20220624  JN619347.gbk 有一个nad4L 大小写混合 就离谱
+            if all_gene_list_lower[i] == gene_name.lower():
+                gene_name = all_gene_list_upper[i]
+                break
+            else:
+                i += 1
+        if i >= 13:
+            print(gene_name, 'WARNING!Please check!')
+            name_flag = 1
+    return gene_name  # , name_flag
+
+
 def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及序列
 
+    # # 20220825 NC_034226.gbk cds没有/gene标签，但是有/product标签
     if 'gene' not in ele.qualifiers.keys():
-        # print(ele.qualifiers)
-        # 返回上一个基因,好从其他参考找这个没名字的
+        if 'product' in ele.qualifiers.keys():
+            tmp_gene_name = ele.qualifiers['product'][0]
+        else:
+            tmp_gene_name = input(
+                "\nPrevious: [{0}]. Current: {1}.\nPlease input current gene name:".format(tmp_gene_name, ele.location.parts))  # 返回上一个基因,好从其他参考找这个没名字的
+        '''
         try:
             #tmp_gene_name = ele.qualifiers['note'][0]
             print(ele.qualifiers)
         except:
             tmp_gene_name = input(
                 "\nPrevious: [{0}]. Current: {1}.\nPlease input current gene name:".format(tmp_gene_name, ele.location.parts))
-    else:
-        # print(ele.qualifiers)
+        '''
+    elif 'gene' in ele.qualifiers.keys():
         tmp_gene_name = ele.qualifiers['gene'][0]
 
     if len(ele.location.parts) == 3:
@@ -218,12 +250,14 @@ def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及
     return cds_note, cds_seq, tmp_gene_name
 
 
-def gene_name_standardization(gene_name):  # 格式化基因名字,可重复使用
+def gene_name_standardization_2(gene_name):  # 格式化基因名字,可重复使用
     name_flag = 0
     all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
                            'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
     all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
                            'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    gene_name = gene_name.replace('III', '3').replace(
+        'II', '2').replace('I', '1')  # 20220825 gbk文件里 基因名是罗马数字，因此需要先处理
     if gene_name.upper() in all_gene_list_upper:
         gene_name = gene_name.upper()
     else:
@@ -262,7 +296,7 @@ def get_cds(gbk_file, flag, dict_gene_len, file_no):  # 解析gbk文件获取cds
             # list_gene_name.append(tmp_gene_name)  # 本次的基因名字 复用,线粒体的话,在下一部分存入列表
             cds_fasta += format_fasta(cds_note, cds_seq, 70)
             gene_name = tmp_gene_name
-            gene_name, name_flag = gene_name_standardization(gene_name)
+            gene_name, name_flag = gene_name_standardization_2(gene_name)
             if name_flag == 1:
                 print(gbk_file, 'WARNING!Please check!')
             list_gene_name.append(gene_name)  # 存入列表
