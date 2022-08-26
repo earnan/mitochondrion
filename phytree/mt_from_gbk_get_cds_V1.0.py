@@ -185,7 +185,15 @@ def get_complete_note(seq_record):  # 获取整个完整基因组ID
 # 仅在 get_cds_note(ele, complete_seq, seq_id, tmp_gene_name)中使用，以应对"gbk中cds没有/gene标签，但是有/product标签"的情况
 def gene_name_standardization_1(gene_name):  # 格式化基因名字,可重复使用
     #name_flag = 0
-    all_gene_dict={'1':'11','2':'22'}
+    all_gene_dict = {'ATP synthase F0 subunit 6': 'ATP6', 'ATP synthase F0 subunit 8': 'ATP8', 'cytochrome b': 'CYTB',
+                     'cytochrome c oxidase subunit I': 'COX1', 'cytochrome c oxidase subunit II': 'COX2',
+                     'cytochrome c oxidase subunit III': 'COX3', 'NADH dehydrogenase subunit 1': 'ND1',
+                     'NADH dehydrogenase subunit 2': 'ND2', 'NADH dehydrogenase subunit 3': 'ND3',
+                     'NADH dehydrogenase subunit 4': 'ND4', 'NADH dehydrogenase subunit 4L': 'ND4L',
+                     'NADH dehydrogenase subunit 5': 'ND5', 'NADH dehydrogenase subunit 6': 'ND6'}
+    if gene_name in all_gene_dict.keys():
+        gene_name = all_gene_dict[gene_name]
+    '''
     all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
                            'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
     all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
@@ -206,15 +214,17 @@ def gene_name_standardization_1(gene_name):  # 格式化基因名字,可重复�
         if i >= 13:
             print(gene_name, 'WARNING!Please check!')
             name_flag = 1
+    '''
     return gene_name  # , name_flag
 
 
 def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及序列
 
-    # # 20220825 NC_034226.gbk cds没有/gene标签，但是有/product标签
+    # 20220825 NC_034226.gbk cds没有/gene标签，但是有/product标签
     if 'gene' not in ele.qualifiers.keys():
         if 'product' in ele.qualifiers.keys():
             tmp_gene_name = ele.qualifiers['product'][0]
+            tmp_gene_name = gene_name_standardization_1(tmp_gene_name)
         else:
             tmp_gene_name = input(
                 "\nPrevious: [{0}]. Current: {1}.\nPlease input current gene name:".format(tmp_gene_name, ele.location.parts))  # 返回上一个基因,好从其他参考找这个没名字的
