@@ -84,6 +84,8 @@ def gene_name_standardization(gene_name):
                            'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
     all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
                            'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    gene_name = gene_name.replace('III', '3').replace(
+        'II', '2').replace('I', '1')  # 20220825 gbk文件里 基因名是罗马数字，因此需要先处理 #20220831 copy过来
     if gene_name.upper() in all_gene_list_upper:
         gene_name = gene_name.upper()
     else:
