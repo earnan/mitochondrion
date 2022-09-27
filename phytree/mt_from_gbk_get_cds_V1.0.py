@@ -14,7 +14,7 @@
 ##########################################################
 from Bio import SeqIO
 from Bio.Seq import Seq
-#from icecream import ic
+from icecream import ic
 import argparse
 import linecache
 import os
@@ -41,10 +41,9 @@ parser = argparse.ArgumentParser(
 \n\
 \npython3   mt_from_gbk_get_cds_V1.0.py\n\
 功能：每个物种都生成cds及完整序列2个文件\n\
-1.常规使用\n\
-1.1 -i [gbk dir] -o [out dir] \n\
-2.其他使用\n\
-2.1 -c 用GAP构造缺失的cds\n\
+1.-i [gbk dir] -o [out dir] \n\
+2.-c 可选,用GAP构造缺失的cds\n\
+3.-info 完整的更新日志\n\
 \n\
 ##########################################################\n\
 Path: E:\OneDrive\jshy信息部\Script\mitochondrion\phytree\mt_from_gbk_get_cds_V1.0.py\n\
@@ -56,13 +55,21 @@ Version: 1.0\n\
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--input', metavar='[indir]', help='gbk dir', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\gbk',  required=False)
+    '-i', '--input', metavar='[gbk dir]',  type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\gbk',  required=False)
 optional.add_argument(
-    '-o', '--output', metavar='[outdir]', help='输出的路径', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\cds', required=False)
+    '-o', '--output', metavar='[outdir]', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\cds', required=False)
 optional.add_argument('-c', '--check', help='默认否,使用时-c',
+                      action='store_true', required=False)
+optional.add_argument('-info', help='默认否,,使用时-info',
                       action='store_true', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
+
+if args.info:
+    print('\n更新日志:')
+    print('\t20220906 修改基因组类型判断,若不符合则退出')
+    print('\n')
+    sys.exit(0)
 
 # ############################################################################################
 
@@ -113,75 +120,54 @@ def merge_sequence(ele, complete_seq):  # 合并获取到的序列,用于函数(
     # print(tmp_list)
     return tmp_list, cds_seq
 
+# ###########################################################################################################
+
 
 def get_complete_note(seq_record):  # 获取整个完整基因组ID
-    try:
-        seq_id = ''
-        # 20220819 NC_044756.1.gbk voucher Liu HM/CP02 chloroplast  有特殊符号，需要处理
-        seq_record.description = seq_record.description.replace('/', '_')
-        # if seq_record.description.find('chloroplast'):#有bug,用str格式化后就没问题了
-        # 20220627 if str(seq_record.description).find('chloroplast') -1也成立,判断时一定要以False True为准
-        # or seq_record.description.split(',')[-2].split()[-1] == 'chloroplast' or seq_record.description.split(',')[-2].split()[-1] == 'plastid':
-        if str(seq_record.description).find('chloroplast') > 0:
-            seq_id = seq_record.description.split(
-                'chloroplast')[0].replace(' ', '_').rstrip('_')
-            name = seq_record.name
-            if seq_id == name:
-                seq_id = seq_id
-            elif seq_id != name:
-                seq_id = seq_id+'_'+name
-            complete_note = ">" + seq_id + "\n"
-        # or seq_record.description.split(',')[-2].split()[-1] == 'mitochondrion':
-        # 20220811 NC_031548.gbk 描述部分 DEFINITION  Oxynoemacheilus angorae mitochondrial DNA, complete genome.
-        elif str(seq_record.description).find('mitochondrion') > 0 or str(seq_record.description).find('mitochondrial') > 0:
-            seq_id = seq_record.description.split(
-                'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 物种或样品名
+    complete_note_flag = ''
+    seq_id = ''
+    # 20220819 NC_044756.1.gbk voucher Liu HM/CP02 chloroplast  第一次处理,去掉特殊符号
+    seq_record.description = seq_record.description.replace('/', '_')
+    """叶绿体部分
+    # 20220627
+    # if str(seq_record.description).find('chloroplast') 为-1也成立,判断时一定要以False True为准
+    # or seq_record.description.split(',')[-2].split()[-1] == 'chloroplast' or seq_record.description.split(',')[-2].split()[-1] == 'plastid':
+    if str(seq_record.description).find('chloroplast') > 0:
+        seq_id = seq_record.description.split(
+            'chloroplast')[0].replace(' ', '_').rstrip('_')
+        name = seq_record.name
+        if seq_id == name:
+            seq_id = seq_id
+        elif seq_id != name:
+            seq_id = seq_id+'_'+name
+        complete_note = ">" + seq_id + "\n"
+    """
+    # 20220811 NC_031548.gbk 描述部分 DEFINITION  Oxynoemacheilus angorae mitochondrial DNA, complete genome.
+    if str(seq_record.description).find('mitochondrion') > 0 or str(seq_record.description).find('mitochondrial') > 0:
+        seq_id = seq_record.description.split(
+            'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 形如 UNVERIFIED:_Rumina_decollata
+        if seq_id.startswith('UNVERIFIED:_'):  # 第二次处理,去掉 UNVERIFIED:_
+            # seq_id = seq_id.lstrip('UNVERIFIED:_')  # 有bug ???????
+            seq_id = seq_id.split(':')[1].strip('_')
+        # Cerion_watlingense_voucher_USNM:1514170_MN904501 第三次处理,去掉冒号后内容
+        if len(seq_id.split(':')) > 1:
+            seq_id = seq_id.split(':')[0]
 
-            if seq_id.startswith('UNVERIFIED:_'):  # 去掉 UNVERIFIED:_
-                seq_id = seq_id.lstrip('UNVERIFIED:_')
-            # 去掉Cerion_watlingense_voucher_USNM:1514170_MN904501 中 冒号后的内容
-            if len(seq_id.split(':')) > 1:
-                seq_id = seq_id.split(':')[0]
-
-            name = seq_record.name  # 要么是登录号  要么是样本
-
-            if seq_id == name:
-                seq_id = seq_id
-            elif seq_id != name:
-                seq_id = seq_id+'_'+name
-            complete_note = ">" + seq_id + "\n"
-        else:
-            print('Genome Type WARNING! {}!'.format(
-                seq_record.description.split(', ')[-2].split()[-1]))
-            complete_note = ">" + \
-                (seq_record.description.split('chloroplast')
-                 [0]).replace(' ', '_').rstrip('_') + "\n"
-    except:  # 如果遇到任何出错
-        print('try/except')
-        complete_note = ''
-        #gbk_type = input('genome type(1:chloroplast;2:mitochondrion): ')
-        gbk_type = 2
-        if gbk_type == 2:
-            seq_id = seq_record.description.split(
-                'mitochondrion')[0].replace(' ', '_').rstrip('_')  # 物种或样品名
-
-            if seq_id.startswith('UNVERIFIED:_'):  # 去掉 UNVERIFIED:_
-                seq_id = seq_id.lstrip('UNVERIFIED:_')
-            # 去掉Cerion_watlingense_voucher_USNM:1514170_MN904501 中 冒号后的内容
-            if len(seq_id.split(':')) > 1:
-                seq_id = seq_id.split(':')[0]
-
-            name = seq_record.name  # 要么是登录号  要么是样本
-
-            if seq_id == name:
-                seq_id = seq_id
-            elif seq_id != name:
-                seq_id = seq_id+'_'+name
-            complete_note = ">" + seq_id + "\n"
-
+        name = seq_record.name  # 要么是登录号  要么是样本
+        if seq_id == name:
+            seq_id = seq_id
+        elif seq_id != name:
+            seq_id = seq_id+'_'+name
+        complete_note = ">" + seq_id + "\n"
+    else:
+        print('Genome Type WARNING! {}!\n{}'.format(
+            seq_record.description.split(', ')[-2].split()[-1], 'Program will exit!'))
+        complete_note_flag = 'skip'
+        sys.exit(0)
     return complete_note, seq_id
 
 
+# ###################################################################################################################
 # 仅在 get_cds_note(ele, complete_seq, seq_id, tmp_gene_name)中使用，以应对"gbk中cds没有/gene标签，但是有/product标签"的情况
 def gene_name_standardization_1(gene_name):  # 格式化基因名字,可重复使用
     #name_flag = 0
@@ -284,6 +270,8 @@ def gene_name_standardization_2(gene_name):  # 格式化基因名字,可重复�
             name_flag = 1
     return gene_name, name_flag
 
+# ##############################################################################################
+
 
 def get_cds(gbk_file, flag, dict_gene_len, file_no):  # 解析gbk文件获取cds
     """完整基因组"""
@@ -327,9 +315,15 @@ def get_cds(gbk_file, flag, dict_gene_len, file_no):  # 解析gbk文件获取cds
 
     return cds_fasta, complete_fasta, count, file_name, list_gene_name, s, dict_gene_len, seq_id
 
+# ###############################################################################构造子函数
 
-def create_gene_by_gap(dict_missing_gene, dict_gene_len, cds_file_path):  # 用gap构造没有的基因
+
+def create_gene_by_gap(dict_missing_gene, dict_gene_len, out_cds_file_list):  # 用gap构造没有的基因
+    # dict_missing_gene   '>Achatina_fulica_NC_024601': []
+    # out_cds_file_list   'cds_NC_036381.fasta'
+    out_cds_file_list_1 = []
     for i in dict_missing_gene.keys():
+        # ic(i)
         cds_fasta = ''
         for j in dict_missing_gene[i]:
             ave = round(sum(dict_gene_len[j]) /
@@ -337,11 +331,19 @@ def create_gene_by_gap(dict_missing_gene, dict_gene_len, cds_file_path):  # 用g
             cds_note = (i+' [0..0]'+' [gene={}]').format(j)
             cds_seq = ave*'-'
             cds_fasta += format_fasta(cds_note, cds_seq, 70)
-        print(cds_fasta)
-        file_name = (i.split('_')[-2]+'_' +
-                     i.split('_')[-1]+'.1').lstrip('>')
-        with open(cds_file_path, 'ab+') as f_cds:  # 读写打开一个二进制文件，允许读，或在文件末追加数据
+        for m in out_cds_file_list:
+            # ic()
+            m = m.lstrip('cds_').rstrip('.fasta')
+            # ic(m)
+            # ic(m.rstrip('.1'))
+            if i.find(m) >= 0 or i.find(m.rstrip('.1')) >= 0:  # i里头也可能不带版本号,去掉m的再查找
+                cds_file_path = 'cds_'+m+'.fasta'
+                out_cds_file_list_1.append(cds_file_path)
+                # print(cds_file_path)
+                # ic()
+        with open(args.output+os.sep+cds_file_path, 'ab+') as f_cds:  # 读写打开一个二进制文件，允许读，或在文件末追加数据
             f_cds.write(cds_fasta.encode())
+    # ic(len(out_cds_file_list_1))
 
 
 if __name__ == '__main__':
@@ -375,10 +377,11 @@ if __name__ == '__main__':
     dict_file_cds_count = {}  # 每个文件中cds计数
     file_list = [i for i in os.listdir(
         args.input) if i.endswith('gbk')]  # 20220811 检查文件后缀
-    file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字
+    file_list.sort()  # key=lambda x: int(x.split('.')[0])) #根据文件名中的数字排序
 
     """主程序"""
-    file_no = 0
+    file_no = 0  # 为了屏幕输出更直观,在文件前面的编号
+    out_cds_file_list = []  # 所有输出的cds前缀文件路径,用于用GAP构造序列
     for file in file_list:
         file_no += 1
         ingbk_path = os.path.join(args.input, file)
@@ -386,8 +389,11 @@ if __name__ == '__main__':
             ingbk_path, False, dict_gene_len, file_no)
         dict_file_cds_count[seq_id] = count  # 每个文件中cds计数
         """写入文件"""
+        out_cds_file_path = ('cds_' +
+                             file_name.rstrip('.gbk')+'.fasta')
+        out_cds_file_list.append(out_cds_file_path)
         with open((args.output+os.sep+seq_id+'.fasta'), 'wb') as f_complete, \
-                open((args.output+os.sep+'cds_'+file_name.rstrip('.gbk')+'.fasta'), 'wb') as f_cds, \
+                open(args.output+os.sep+out_cds_file_path, 'wb') as f_cds, \
                 open((args.output+os.sep+'log'), 'a+') as f_log:
             f_cds.write(cds_fasta.encode())
             f_complete.write(complete_fasta.encode())
@@ -412,6 +418,7 @@ if __name__ == '__main__':
             [f_log.write(tmp+'\t') for tmp in list_missing_gene]
             f_log.write('\n')
         dict_missing_gene['>'+seq_id] = list_missing_gene  # 放入字典当中
+    # 后面考虑在这给字典排个序
     with open((args.output+os.sep+'log'), 'a+') as f_log:
         f_log.write(str(dict_missing_gene))
 
@@ -420,14 +427,16 @@ if __name__ == '__main__':
     for i in dict_file_cds_count.keys():  # 键为seq_id,值为个数
         total_ref_gene += dict_file_cds_count[i]
     print('\n')
-    print(dict_gene_len)  # 键为每个基因,值为列表,列表为每个基因在不同物种中的长度
-    print(dict_missing_gene)  # 键为>seq_id,值为列表,列表为每个物种确实的基因
-    print(2*(total_ref_gene-13))
+    # print(dict_gene_len)  # 键为每个基因,值为列表,列表为每个基因在不同物种中的长度
+    # print(dict_missing_gene)  # 键为>seq_id,值为列表,列表为每个物种确实的基因
+    # print(2*(total_ref_gene-13))
+    # ic(len(dict_missing_gene))
+    # ic(dict_missing_gene)
+    # ic(len(out_cds_file_list))
 
     """gap构造基因"""
     if args.check:
-        cds_file_path = args.output+os.sep+file_name+'_cds.fasta'
-        create_gene_by_gap(dict_missing_gene, dict_gene_len, cds_file_path)
+        create_gene_by_gap(dict_missing_gene, dict_gene_len, out_cds_file_list)
 
     print('\n')
     ###############################################################
