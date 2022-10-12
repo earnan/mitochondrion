@@ -14,7 +14,7 @@
 ##########################################################
 from Bio import SeqIO
 from Bio.Seq import Seq
-from icecream import ic
+#from icecream import ic
 import argparse
 import linecache
 import os
@@ -67,7 +67,8 @@ args = parser.parse_args()
 
 if args.info:
     print('\n更新日志:')
-    print('\t20220906 修改基因组类型判断,若不符合则退出')
+    print('\t20220906 修改基因组的类型判断,若不符合则退出')
+    print('\t20221012 修改基因名字映射函数,使其能够识别CO1样式')
     print('\n')
     sys.exit(0)
 
@@ -225,6 +226,9 @@ def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及
     elif 'gene' in ele.qualifiers.keys():
         tmp_gene_name = ele.qualifiers['gene'][0]
 
+    tmp_gene_name, name_flag = gene_name_standardization_2(
+        tmp_gene_name)  # 20221012 也需要第二种标准化
+
     if len(ele.location.parts) == 3:
         tmp_list, cds_seq = merge_sequence(ele, complete_seq)
         cds_note = ">" + seq_id + " [" + tmp_list[0]+".." + tmp_list[1]+';' + tmp_list[2]+".." + tmp_list[3]+';' + \
@@ -247,27 +251,47 @@ def get_cds_note(ele, complete_seq, seq_id, tmp_gene_name):  # 获取cds的id及
 
 
 def gene_name_standardization_2(gene_name):  # 格式化基因名字,可重复使用
-    name_flag = 0
+    # 初始化
     all_gene_list_upper = ['ATP6', 'ATP8', 'CYTB', 'COX1', 'COX2',
                            'COX3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+    all_gene_list_upper2 = ['ATP6', 'ATP8', 'CYTB', 'CO1', 'CO2',
+                            'CO3', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
     all_gene_list_lower = ['atp6', 'atp8', 'cob', 'cox1', 'cox2',
                            'cox3', 'nad1', 'nad2', 'nad3', 'nad4', 'nad4l', 'nad5', 'nad6']
+    name_flag = 0
+    # 基因名字前处理1 # 20220825 gbk文件里 基因名是罗马数字，因此需要先处理
     gene_name = gene_name.replace('III', '3').replace(
-        'II', '2').replace('I', '1')  # 20220825 gbk文件里 基因名是罗马数字，因此需要先处理
+        'II', '2').replace('I', '1')
+
+    # ------------------名字映射
+    # 名字样式大写的情况
     if gene_name.upper() in all_gene_list_upper:
         gene_name = gene_name.upper()
     else:
         i = 0
         while i < 13:
-            # 20220624  JN619347.gbk 有一个nad4L 大小写混合 就离谱
-            if all_gene_list_lower[i] == gene_name.lower():
+            # 20221012  MN053900.1.gbk 有一个CO1
+            if all_gene_list_upper2[i] == gene_name.upper():
                 gene_name = all_gene_list_upper[i]
+                print(gene_name)
                 break
             else:
                 i += 1
         if i >= 13:
-            print(gene_name, 'WARNING!Please check!')
-            name_flag = 1
+            #print(gene_name, 'Try further changes...')
+            # 名字样式小写的情况
+            i = 0
+            while i < 13:
+                # 20220624  JN619347.gbk 有一个nad4L 大小写混合 就离谱
+                if all_gene_list_lower[i] == gene_name.lower():
+                    gene_name = all_gene_list_upper[i]
+                    break
+                else:
+                    i += 1
+            if i >= 13:
+                print('all_three_methods_failed！')
+                print(gene_name, 'WARNING!Please check!')
+                name_flag = 1
     return gene_name, name_flag
 
 # ##############################################################################################
