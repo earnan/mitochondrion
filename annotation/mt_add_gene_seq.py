@@ -175,7 +175,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
             print('#####interior is wrong!')
             tmp_flag = 2
             inter_number = acid.find('*')
-            print(inter_number)
+            print('Index of the first stop codon :{}'.format(inter_number))
             print('\n')
         elif acid.count('*') < 1:  # 终止小于1 1.真的未终止2.线粒体终止了,共5种细分情况
             if len(cds_seq) % 3 == 1 and cds_seq[-1] in end_codon_list:
@@ -192,11 +192,12 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
                 print('#####interior is wrong!')
                 tmp_flag = 2
                 inter_number = acid.find('*')
-                print(inter_number)
+                print('Index of the first stop codon :{}'.format(inter_number))
                 print('\n')
             else:
                 tmp_flag = 0
                 print('------------------------------------------------------------ok')
+                #print('Index of the first stop codon :{}'.format(inter_number))
     return tmp_flag, inter_number, acid
 
 
@@ -219,31 +220,34 @@ def get_current_first_end_pos(tmp_pos_list, inter_number):
         lenth_list.append(lenth)
         strand_list.append(strand)
 
-    print(lenth_list)  # 序列可能是多段
-    print(strand_list)  # 序列可能是多段
-    lenth_sum = 0  # 序列总长
-    for i in lenth_list:
-        lenth_sum += i
-    remaining_bp = lenth_sum-inter_pos  # 剩余的碱基数,不包括第一个终止子
+    print('Lenth list:{0}\tStrand list:{1}\tTotal length:{2}bp'.format(
+        lenth_list, strand_list, sum(i for i in lenth_list)))  # 序列可能是多段
 
-    if remaining_bp <= lenth_list[-1]:  # 剩余的长度小于最后一段，说明终止子位于最后一段内
-        print('lie in [{}]'.format(tmp_pos_list[-1]))
-        # 20220808 更正第一个终止密码子出现位置的计算公式
-        if tmp_pos_list[-1].split(':')[-1] == 1:  # plus链基因
-            current_first_end_pos = int(re.findall(
-                r'\d+', tmp_pos_list[-1])[-1])-remaining_bp-1  # 终止子中间那个碱基位置
-            print('{}-{}:+'.format(current_first_end_pos-1, current_first_end_pos+1))
-            print('\n')
-        elif tmp_pos_list[-1].split(':')[-1] == -1:  # minus链基因
-            current_first_end_pos = int(re.findall(
-                r'\d+', tmp_pos_list[-1])[0])+remaining_bp+1
-            print('{}-{}:-'.format(current_first_end_pos-1, current_first_end_pos+1))
-            print('\n')
-
-    elif inter_pos <= lenth_list[0]:  # 包括第一个终止在内的长度小于第一段，说明终止子位于第一段
-        print('lie in [{}]'.format(tmp_pos_list[0]))
+    if inter_pos == 0:  # 说明序列正确，终止子在末尾
+        print('Stop codon lie in [{}]'.format(
+            tmp_pos_list[-1]))  # 说明终止子位于最后一段内
     else:
-        print('lie in [{}]'.format(tmp_pos_list[1]))
+        remaining_bp = sum(i for i in lenth_list)-inter_pos  # 剩余的碱基数,不包括第一个终止子
+        if remaining_bp <= lenth_list[-1]:  # 剩余的长度小于最后一段，说明终止子位于最后一段内
+            print('Stop codon lie in [{}]'.format(tmp_pos_list[-1]))
+            # 20220808 更正第一个终止密码子出现位置的计算公式
+            if tmp_pos_list[-1].split(':')[-1] == 1:  # plus链基因
+                current_first_end_pos = int(re.findall(
+                    r'\d+', tmp_pos_list[-1])[-1])-remaining_bp-1  # 终止子中间那个碱基位置
+                print('{}-{}:+'.format(current_first_end_pos -
+                      1, current_first_end_pos+1))
+                print('\n')
+            elif tmp_pos_list[-1].split(':')[-1] == -1:  # minus链基因
+                current_first_end_pos = int(re.findall(
+                    r'\d+', tmp_pos_list[-1])[0])+remaining_bp+1
+                print('{}-{}:-'.format(current_first_end_pos -
+                      1, current_first_end_pos+1))
+                print('\n')
+
+        elif inter_pos <= lenth_list[0]:  # 包括第一个终止在内的长度小于第一段，说明终止子位于第一段
+            print('Stop codon lie in [{}]'.format(tmp_pos_list[0]))
+        else:
+            print('Stop codon lie in [{}]'.format(tmp_pos_list[1]))
     return 0
 
 #################################################################################################################
@@ -297,7 +301,7 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                     new_pos_str = tmp_pos_list
             else:
                 new_pos_str = posstr
-            print('正确位置: {}'.format(new_pos_str))
+            print('Correct Position: [{}]'.format(new_pos_str))
             if pro_file_name != 'NULL':
                 with open(os.path.join(current_abs_path, pro_file_name+'.acid'), 'w') as f_handle:
                     f_handle.write(str(acid)+'\n')
@@ -348,7 +352,7 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                         r'\d+', posstr)[-1], str(int(re.findall(
                             r'\d+', posstr)[-1])-3))
                 tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
-                print('正确位置: {}'.format(new_pos_str))
+                print('Correct Position: [{}]'.format(new_pos_str))
                 if pro_file_name != 'NULL':
                     with open(os.path.join(current_abs_path, pro_file_name+'.acid'), 'w') as f_handle:
                         f_handle.write(str(acid)+'\n')
