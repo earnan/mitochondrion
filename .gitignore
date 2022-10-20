@@ -1,2 +1,5 @@
 # Byte-compiled / optimized / DLL files
 .history/
+.gitignore
+annotation/mt_note_edit.py
+

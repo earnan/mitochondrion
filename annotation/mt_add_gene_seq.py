@@ -7,20 +7,27 @@
 #    Description:   mt_add_gene_seq.py
 #        Version:   2.0
 #           Time:   2022/05/23 16:35:19
-#  Last Modified:   2022/05/23 16:35:19
+#  Last Modified:   2022/10/20 16:35:19
 #        Contact:   hi@arcsona.cn
-#        License:   Copyright (C) 2022
+#        License:   GNU General Public License v3.0
 #
 ##########################################################
-#import pretty_errors
 from Bio import SeqIO
 from Bio.Seq import Seq
-#from icecream import ic
-import argparse
-import linecache
-import os
-import re
+# from humre import *  # 正则
+# from icecream import ic  # 打印
+import argparse  # 命令行
+import linecache  # 大文件行读取
+import os  # 目录路径
+# import pretty_errors  # 错误提示
+import re  # 正则
+import sys
 import time
+import copy  # 深度拷贝
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 parser = argparse.ArgumentParser(
     add_help=False, usage='\
@@ -40,9 +47,9 @@ Version: V2.0'
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
 optional.add_argument(
-    '-i', '--infasta', metavar='[infasta]', help='输入fasta文件', type=str, default='E:\\Examples\\mt_from_gbk_get_cds\\Meghimatium_bilineatum_1_FULLMT.fsa', required=False)
+    '-i', '--infasta', metavar='[infasta]', help='输入fasta文件', type=str, default='F:\\Peronia_verruculata_FULLMT.fsa', required=False)
 optional.add_argument(
-    '-p', '--posstr', metavar='[pos_str]', help="输入位置,形如'124353-124892:-;126001-126552:-'", type=str, default='14323-1527:+', required=False)
+    '-p', '--posstr', metavar='[pos_str]', help="输入位置,形如'124353-124892:-;126001-126552:-'", type=str, default='5841-6154:+', required=False)
 optional.add_argument(
     '-n', '--codonnumber', metavar='[codon_number]', help='密码子表,默认5', type=int, default=5, required=False)
 optional.add_argument(
@@ -53,9 +60,16 @@ optional.add_argument('-sn', '--nuc_file_name',
                       metavar='[store 2 dna]', help='默认否,值为NULL,存储则输入gene名', type=str,  default='NULL', required=False)
 optional.add_argument('-sp', '--pro_file_name',
                       metavar='[store 2 protein]', help='默认否,值为NULL,存储则输入蛋白名', type=str,  default='NULL', required=False)
+optional.add_argument('-info', help='更新日志,使用时-info',
+                      action='store_true', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
 
+if args.info:
+    print('\n更新日志:')
+    print('\t20221020  添加终止子错误时的查找 更新一些提示信息')
+    print('\n')
+    sys.exit(0)
 ##########################################################################################
 # 子函数 功能简单
 
@@ -158,9 +172,9 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
     tmp_flag = 0  # tmp_flag 起始是否正确的标志,默认False   20220610改为数字,0为正确,1为起始x,2为内部错,3为末尾错
     inter_number = 0
     if len(cds_seq) % 3 == 1:
-        print('len(sequence) not a multiple of three! {}=3n+1'.format(len(cds_seq)))
+        print('current len(sequence) not a multiple of three! {}=3n+1'.format(len(cds_seq)))
     elif len(cds_seq) % 3 == 2:
-        print('len(sequence) not a multiple of three! {}=3n+2'.format(len(cds_seq)))
+        print('current len(sequence) not a multiple of three! {}=3n+2'.format(len(cds_seq)))
 
     coding_dna = Seq(cds_seq)
     acid = coding_dna.translate(table=n)
@@ -197,7 +211,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
             else:
                 tmp_flag = 0
                 print('------------------------------------------------------------ok')
-                #print('Index of the first stop codon :{}'.format(inter_number))
+                # print('Index of the first stop codon :{}'.format(inter_number))
     return tmp_flag, inter_number, acid
 
 
@@ -265,7 +279,7 @@ def storage_dna(flag_gene_type, len_trna_type, nuc_file_name, cds_seq):  # 存�
             f_handle.write(cds_seq+'\n')
 
     # if flag_gene_type == 'NULL':  # 20220722   把 cds 存起来
-        #current_abs_path = os.getcwd()
+        # current_abs_path = os.getcwd()
         # if nuc_file_name != 'NULL':
             # with open(os.path.join(current_abs_path, nuc_file_name), 'w') as f_handle:
             # f_handle.write(cds_seq+'\n')
@@ -276,6 +290,13 @@ def storage_dna(flag_gene_type, len_trna_type, nuc_file_name, cds_seq):  # 存�
 
 # 循环查找   *.fas/"1-10:-;20-30:-"/翻译/递归计数/最大递归次数
 def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_name, pro_file_name):
+    if n == 5:
+        start_codon_list = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+        end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 5
+    elif n == 2:
+        start_codon_list = ['ATT', 'ATC', 'ATA', 'ATG', 'GTG']
+        end_codon_list = ['TAA', 'TAG', 'AGA',
+                          'AGG', 'TA', 'T', 'AG']  # 2,转录时要加A
     inter_number = False  # 20220629 add  初始值为false
 
     seq = read_file(infasta)
@@ -283,12 +304,18 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
     cds_seq, tmp_pos_list, flag_gene_type, len_trna_type = merge_sequence(
         pos_list, seq)  # tmp_pos_list  把位置当列表再传出来,这个位置信息向下传递
     print('\n'+cds_seq)
-    print(tmp_pos_list)
-    print(posstr)
+    print('current pos:{}'.format(tmp_pos_list))
+    print('current pos:{}'.format(posstr))
     storage_dna(flag_gene_type, len_trna_type, nuc_file_name, cds_seq)
 
     if trans_flag and (flag_gene_type != 'trna'):  # 翻译
         tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
+        if tmp_flag != 1:
+            print('\n[START CONDON]The correct start codon was found after {} searches / Total times: {}'.format(
+                len(loop_count_flag1), len(loop_count_flag)))
+            if tmp_flag != 3:
+                print('\n[STOP CONDON]The correct stop codon was found after {} searches / Total times: {}'.format(
+                    len(loop_count_flag3), len(loop_count_flag)))
         current_abs_path = os.getcwd()
         # #########################################################################################################################################
         # 第一层if else
@@ -308,26 +335,23 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
         # #####################################################################################################################################
         # 第一层if else
             """考虑细分情况 20220610考虑起始子错误的查找  其他错误类型暂时不考虑,用原来的程序写死"""
+            """考虑细分情况 20221020考虑终止子错误的查找"""
         elif tmp_flag == 1:  # 起始错,这个优先要满足的条件就不对
             # posstr 能传到这里  形如 1-7:+;14020-14078:+
             # tmp_pos_list 也能传到这里  形如['1-7:1', '14020-14078:1']
             loop_count += 1
-            print('第{}次查找中'.format(loop_count))
+            loop_count_flag.append(000)
+            loop_count_flag1.append(1)  # 每有一次查找,列表元素个数就+1
+            print(
+                '\n[START CONDON]Start search......Times:{} / Total times:{}'.format(loop_count, len(loop_count_flag)))
             cds_seq = cds_seq[3:]  # 已经判断起始错误了,因此直接把序列剪掉前面3个碱基
 
-            if n == 5:
-                start_codon_list = ['TTG', 'ATT', 'ATC', 'ATA', 'ATG', 'GTG']
-                end_codon_list = ['TAA', 'TAG', 'TA', 'T']  # 5
-            elif n == 2:
-                start_codon_list = ['ATT', 'ATC', 'ATA', 'ATG', 'GTG']
-                end_codon_list = ['TAA', 'TAG', 'AGA',
-                                  'AGG', 'TA', 'T', 'AG']  # 2,转录时要加A
             # ##############################################################
             # 定义为第二层if else
             if cds_seq[0:3] not in start_codon_list and maxnumber != 0:  # 20220805  如果为假查找，就不进行下一步了
                 start_flag = False
-                print(tmp_pos_list)
-                print(posstr)
+                print('old pos:{}'.format(tmp_pos_list))
+                print('old pos:{}'.format(posstr))
                 # 20220808 以下自动返回位置，也就是开头往后挪6bp
                 if posstr.split(':')[-1] == '+':
                     new_pos_str = posstr.replace(posstr.split(
@@ -352,12 +376,63 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                         r'\d+', posstr)[-1], str(int(re.findall(
                             r'\d+', posstr)[-1])-3))
                 tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
-                print('Correct Position: [{}]'.format(new_pos_str))
-                if pro_file_name != 'NULL':
-                    with open(os.path.join(current_abs_path, pro_file_name+'.acid'), 'w') as f_handle:
-                        f_handle.write(str(acid)+'\n')
+
+                if tmp_flag != 1:
+                    print('The correct starting codon was found after {} searches / Total times: {}'.format(
+                        len(loop_count_flag1), len(loop_count_flag)))
+                if tmp_flag == 0:  # 20221020 其他地方还会出错,所以要再次检查
+                    print('Correct Position: [{}]'.format(new_pos_str))
+                    if pro_file_name != 'NULL':
+                        with open(os.path.join(current_abs_path, pro_file_name+'.acid'), 'w') as f_handle:
+                            f_handle.write(str(acid)+'\n')
+                else:  # 还没完全找对
+                    if loop_count <= maxnumber:
+                        loop_look(infasta, new_pos_str, trans_flag, loop_count,
+                                  maxnumber, n, nuc_file_name, pro_file_name)
         # ################################################################################################################################
         # 第一层if else
+            """考虑细分情况 20221020考虑终止子错误的查找"""
+        elif tmp_flag == 3:  # 3代表未终止 序列长度为3种情况,3n 3n+1 3n+2
+            # posstr 能传到这里  形如 1-7:+;14020-14078:+
+            # tmp_pos_list 也能传到这里  形如['1-7:1', '14020-14078:1']
+            loop_count_flag.append(000)
+            loop_count_flag3.append(3)
+            loop_count = len(loop_count_flag)
+            print(
+                '\n[STOP CONDON]Start search......Times:{} / Total times:{}'.format(len(loop_count_flag3), len(loop_count_flag)))
+            print('old pos:{}'.format(tmp_pos_list))
+            print('old pos:{}'.format(posstr))
+            # if (abs(int(re.findall(r'\d+', posstr)[0])-int(re.findall(r'\d+', posstr)[1]))+1) % 3 == 0:
+            # print(0)
+            if len(cds_seq) % 3 == 0:
+                print(
+                    'old len(sequence) is a multiple of three! {}=3n'.format(len(cds_seq)))
+                if posstr.split(':')[-1] == '+':
+                    new_pos_str = posstr.replace(posstr.split(
+                        '-')[-1].split(':')[0], str(int(posstr.split('-')[-1].split(':')[0])+3))
+                elif posstr.split(':')[-1] == '-':
+                    new_pos_str = posstr.replace(re.findall(
+                        r'\d+', posstr)[0], str(int(re.findall(
+                            r'\d+', posstr)[0])-3))
+            else:
+                if len(cds_seq) % 3 == 1:
+                    print(
+                        'old len(sequence) not a multiple of three! {}=3n+1'.format(len(cds_seq)))
+                elif len(cds_seq) % 3 == 2:
+                    print(
+                        'old len(sequence) not a multiple of three! {}=3n+2'.format(len(cds_seq)))
+                if posstr.split(':')[-1] == '+':
+                    new_pos_str = posstr.replace(posstr.split(
+                        '-')[-1].split(':')[0], str(int(posstr.split('-')[-1].split(':')[0])+1))
+                elif posstr.split(':')[-1] == '-':
+                    new_pos_str = posstr.replace(re.findall(
+                        r'\d+', posstr)[0], str(int(re.findall(
+                            r'\d+', posstr)[0])-1))
+
+            if loop_count <= maxnumber:
+                loop_look(infasta, new_pos_str, trans_flag,
+                          loop_count, maxnumber, n, nuc_file_name, pro_file_name)
+
         else:
             maxnumber == 0  # 赋值为0  相当于一个假查找
             # 一般是在外面赋值,这里因为修改tmp_falg==1的查找,不能在参数设置时默认为0,否则会影响tmp_falg==1的情况
@@ -375,6 +450,9 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
 
 if __name__ == '__main__':
     loop_count = 0  # 控制递归次数,在loop_look函数外部定义全局变量   递归的计数
+    loop_count_flag1 = []  # 20221020 定义一个查找正确起始子次数的列表,作为提示信息向外输出
+    loop_count_flag3 = []
+    loop_count_flag = []
     tmp_pos_list, inter_number = loop_look(
         args.infasta, args.posstr, args.trans_flag, loop_count, args.maxnumber, args.codonnumber, args.nuc_file_name, args.pro_file_name)
     if type(inter_number) == type(1):
