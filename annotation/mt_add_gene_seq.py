@@ -7,7 +7,7 @@
 #    Description:   mt_add_gene_seq.py
 #        Version:   2.0
 #           Time:   2022/05/23 16:35:19
-#  Last Modified:   2022/10/20 16:35:19
+#  Last Modified:   2022/10/24 15:52:22
 #        Contact:   hi@arcsona.cn
 #        License:   GNU General Public License v3.0
 #
@@ -17,31 +17,48 @@ from Bio.Seq import Seq
 # from humre import *  # 正则
 # from icecream import ic  # 打印
 import argparse  # 命令行
-import linecache  # 大文件行读取
+# import linecache  # 大文件行读取
 import os  # 目录路径
 # import pretty_errors  # 错误提示
 import re  # 正则
 import sys
-import time
-import copy  # 深度拷贝
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-
+# import time
+# import copy  # 深度拷贝
+# import pandas as pd
+# import numpy as np
+# import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(
-    add_help=False, usage='\
+    add_help=False, usage='\n\
+\n\
+##########################################################\n\
+#\n\
+#       Filename:   mt_add_gene_seq.py\n\
+#         Author:   yujie\n\
+#    Description:   mt_add_gene_seq.py\n\
+#        Version:   2.0\n\
+#           Time:   2022/05/23 16:35:19\n\
+#  Last Modified:   2022/10/24 15:52:22\n\
+#        Contact:   hi@arcsona.cn\n\
+#        License:   GNU General Public License v3.0\n\
+#\n\
+##########################################################\n\
+\n\
 \npython3   mt_add_gene_seq.py\n\
 \n\
 1.常规使用\n\
 1.1查看密码子 -n -i -p \n\
+1.2序列被误判为trna,强制翻译使用 -f \n\
 \n\
 2.递归查找与存储\n\
-2.1起始子查找,-m 最大查找次数\n\
-2.2存储序列,-sn 基因名\n\
-2.3存储蛋白,-sp 基因名\n\
+2.1起始子/终止子自动查找,-m 最大查找次数\n\
+\n\
+3.存储为文件\n\
+3.1存储序列,-sn 基因名\n\
+3.2存储蛋白,-sp 基因名\n\
 \n\
 Path: E:\OneDrive\jshy信息部\Script\mitochondrion\annotation\mt_add_gene_seq.py\n\
+Path: /share/nas1/yuj/script/mitochondrion/annotation/mt_add_gene_seq.py\n\
 Version: V2.0'
 )
 optional = parser.add_argument_group('可选项')
@@ -55,7 +72,9 @@ optional.add_argument(
 optional.add_argument(
     '-m', '--maxnumber', metavar='[max_number]', help='最大递归查找次数,默认0,假查找', type=int, default=0, required=False)
 optional.add_argument('-trans', '--trans_flag',
-                      help='翻译?默认是,不运行则-c1', action='store_false', required=False)
+                      help='翻译?默认是,不运行则-trans', action='store_false', required=False)
+optional.add_argument('-f', '--force_flag',
+                      help='强制翻译?默认否,运行则-f', action='store_true', required=False)
 optional.add_argument('-sn', '--nuc_file_name',
                       metavar='[store 2 dna]', help='默认否,值为NULL,存储则输入gene名', type=str,  default='NULL', required=False)
 optional.add_argument('-sp', '--pro_file_name',
@@ -68,8 +87,10 @@ args = parser.parse_args()
 if args.info:
     print('\n更新日志:')
     print('\t20221020  添加终止子错误时的查找 更新一些提示信息')
+    print('\t20221024  添加强制翻译-f参数 更新部分交互信息')
     print('\n')
     sys.exit(0)
+
 ##########################################################################################
 # 子函数 功能简单
 
@@ -211,7 +232,7 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
             else:
                 tmp_flag = 0
                 print('------------------------------------------------------------ok')
-                # print('Index of the first stop codon :{}'.format(inter_number))
+    #print('Already Run {}s'.format(time.time()-begin_time))
     return tmp_flag, inter_number, acid
 
 
@@ -219,6 +240,8 @@ def trans2acid(cds_seq, n):  # 翻译成氨基酸,返回是否正确以及第一
 
 
 # 如果内部有终止子,则开始尝试返回新的基因位置，指开头到第一个终止子这一段
+
+
 def get_current_first_end_pos(tmp_pos_list, inter_number):
     # tmp_pos_list = []  # 排序后位置,起始子序列在列表第一位，终止子在列表最后一位
     # inter_number = 200  # 包括第一个终止子在内的前面所有密码子个数
@@ -262,6 +285,7 @@ def get_current_first_end_pos(tmp_pos_list, inter_number):
             print('Stop codon lie in [{}]'.format(tmp_pos_list[0]))
         else:
             print('Stop codon lie in [{}]'.format(tmp_pos_list[1]))
+    #print('Already Run {}s'.format(time.time()-begin_time))
     return 0
 
 #################################################################################################################
@@ -304,18 +328,20 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
     cds_seq, tmp_pos_list, flag_gene_type, len_trna_type = merge_sequence(
         pos_list, seq)  # tmp_pos_list  把位置当列表再传出来,这个位置信息向下传递
     print('\n'+cds_seq)
-    print('current pos:{}'.format(tmp_pos_list))
-    print('current pos:{}'.format(posstr))
+    if maxnumber > 0:
+        print('current pos:{}'.format(tmp_pos_list))
+        print('current pos:{}'.format(posstr))
     storage_dna(flag_gene_type, len_trna_type, nuc_file_name, cds_seq)
 
-    if trans_flag and (flag_gene_type != 'trna'):  # 翻译
+    if (trans_flag and (flag_gene_type != 'trna')) or args.force_flag:  # 翻译
         tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
-        if tmp_flag != 1:
-            print('\n[START CONDON]The correct start codon was found after {} searches / Total times: {}'.format(
-                len(loop_count_flag1), len(loop_count_flag)))
-            if tmp_flag != 3:
-                print('\n[STOP CONDON]The correct stop codon was found after {} searches / Total times: {}'.format(
-                    len(loop_count_flag3), len(loop_count_flag)))
+        if maxnumber > 0:
+            if tmp_flag != 1:
+                print('\n[START CONDON]The correct start codon was found after {} searches / Total times: {}'.format(
+                    len(loop_count_flag1), len(loop_count_flag)))
+                if tmp_flag != 3:
+                    print('\n[STOP CONDON]The correct stop codon was found after {} searches / Total times: {}'.format(
+                        len(loop_count_flag3), len(loop_count_flag)))
         current_abs_path = os.getcwd()
         # #########################################################################################################################################
         # 第一层if else
@@ -342,16 +368,18 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
             loop_count += 1
             loop_count_flag.append(000)
             loop_count_flag1.append(1)  # 每有一次查找,列表元素个数就+1
-            print(
-                '\n[START CONDON]Start search......Times:{} / Total times:{}'.format(loop_count, len(loop_count_flag)))
+            if maxnumber > 0:
+                print(
+                    '\n[START CONDON]Start search......Times:{} / Total times:{}'.format(loop_count, len(loop_count_flag)))
             cds_seq = cds_seq[3:]  # 已经判断起始错误了,因此直接把序列剪掉前面3个碱基
 
             # ##############################################################
             # 定义为第二层if else
             if cds_seq[0:3] not in start_codon_list and maxnumber != 0:  # 20220805  如果为假查找，就不进行下一步了
                 start_flag = False
-                print('old pos:{}'.format(tmp_pos_list))
-                print('old pos:{}'.format(posstr))
+                if maxnumber > 0:
+                    print('old pos:{}'.format(tmp_pos_list))
+                    print('old pos:{}'.format(posstr))
                 # 20220808 以下自动返回位置，也就是开头往后挪6bp
                 if posstr.split(':')[-1] == '+':
                     new_pos_str = posstr.replace(posstr.split(
@@ -377,9 +405,10 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                             r'\d+', posstr)[-1])-3))
                 tmp_flag, inter_number, acid = trans2acid(cds_seq, n)
 
-                if tmp_flag != 1:
-                    print('The correct starting codon was found after {} searches / Total times: {}'.format(
-                        len(loop_count_flag1), len(loop_count_flag)))
+                if maxnumber > 0:
+                    if tmp_flag != 1:
+                        print('The correct starting codon was found after {} searches / Total times: {}'.format(
+                            len(loop_count_flag1), len(loop_count_flag)))
                 if tmp_flag == 0:  # 20221020 其他地方还会出错,所以要再次检查
                     print('Correct Position: [{}]'.format(new_pos_str))
                     if pro_file_name != 'NULL':
@@ -398,15 +427,17 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
             loop_count_flag.append(000)
             loop_count_flag3.append(3)
             loop_count = len(loop_count_flag)
-            print(
-                '\n[STOP CONDON]Start search......Times:{} / Total times:{}'.format(len(loop_count_flag3), len(loop_count_flag)))
-            print('old pos:{}'.format(tmp_pos_list))
-            print('old pos:{}'.format(posstr))
+            if maxnumber > 0:
+                print(
+                    '\n[STOP CONDON]Start search......Times:{} / Total times:{}'.format(len(loop_count_flag3), len(loop_count_flag)))
+                print('old pos:{}'.format(tmp_pos_list))
+                print('old pos:{}'.format(posstr))
             # if (abs(int(re.findall(r'\d+', posstr)[0])-int(re.findall(r'\d+', posstr)[1]))+1) % 3 == 0:
             # print(0)
             if len(cds_seq) % 3 == 0:
-                print(
-                    'old len(sequence) is a multiple of three! {}=3n'.format(len(cds_seq)))
+                if maxnumber > 0:
+                    print(
+                        'old len(sequence) is a multiple of three! {}=3n'.format(len(cds_seq)))
                 if posstr.split(':')[-1] == '+':
                     new_pos_str = posstr.replace(posstr.split(
                         '-')[-1].split(':')[0], str(int(posstr.split('-')[-1].split(':')[0])+3))
@@ -416,11 +447,13 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                             r'\d+', posstr)[0])-3))
             else:
                 if len(cds_seq) % 3 == 1:
-                    print(
-                        'old len(sequence) not a multiple of three! {}=3n+1'.format(len(cds_seq)))
+                    if maxnumber > 0:
+                        print(
+                            'old len(sequence) not a multiple of three! {}=3n+1'.format(len(cds_seq)))
                 elif len(cds_seq) % 3 == 2:
-                    print(
-                        'old len(sequence) not a multiple of three! {}=3n+2'.format(len(cds_seq)))
+                    if maxnumber > 0:
+                        print(
+                            'old len(sequence) not a multiple of three! {}=3n+2'.format(len(cds_seq)))
                 if posstr.split(':')[-1] == '+':
                     new_pos_str = posstr.replace(posstr.split(
                         '-')[-1].split(':')[0], str(int(posstr.split('-')[-1].split(':')[0])+1))
@@ -445,10 +478,15 @@ def loop_look(infasta, posstr, trans_flag, loop_count, maxnumber, n, nuc_file_na
                           loop_count, maxnumber, n, nuc_file_name, pro_file_name)
             else:
                 print('{}次查找未有结果,取消第{}次查找'.format(loop_count-1, loop_count))
+    #print('Already Run {}s'.format(time.time()-begin_time))
     return tmp_pos_list, inter_number
 
 
 if __name__ == '__main__':
+    #################################################################
+    # 格式化成2016-03-20 11: 45: 39形式
+    #begin_time = time.time()
+    ###############################################################
     loop_count = 0  # 控制递归次数,在loop_look函数外部定义全局变量   递归的计数
     loop_count_flag1 = []  # 20221020 定义一个查找正确起始子次数的列表,作为提示信息向外输出
     loop_count_flag3 = []
@@ -457,6 +495,7 @@ if __name__ == '__main__':
         args.infasta, args.posstr, args.trans_flag, loop_count, args.maxnumber, args.codonnumber, args.nuc_file_name, args.pro_file_name)
     if type(inter_number) == type(1):
         get_current_first_end_pos(tmp_pos_list, inter_number)
+
 
 """
 def trans2acid(codon):  # 翻译成氨基酸
