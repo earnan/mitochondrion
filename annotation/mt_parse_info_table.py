@@ -7,31 +7,55 @@
 #    Description:   mt_parse_info_table.py
 #        Version:   1.0
 #           Time:   2022/05/23 11:51:11
-#  Last Modified:   2022/05/23 11:51:11
+#  Last Modified:   2022/11/08 11:12:42
 #        Contact:   hi@arcsona.cn
-#        License:   Copyright (C) 2022
+#        License:   GNU General Public License v3.0
 #
 ##########################################################
 from Bio import SeqIO
 from Bio.Seq import Seq
-#from icecream import ic
-import argparse
-import linecache
-import os
-import re
-import time
+# from humre import *  # 正则
+# from icecream import ic  # 打印
+import argparse  # 命令行
+# import linecache  # 大文件行读取
+# import os  # 目录路径
+# import pretty_errors  # 错误提示
+import re  # 正则
 import sys
+#import time
+# import copy  # 深度拷贝
+#import pandas as pd
+#import numpy as np
+#import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(
     add_help=False, usage='\n\
+\n\
+##########################################################\n\
+#\n\
+#       Filename:   mt_parse_info_table.py\n\
+#         Author:   yujie\n\
+#    Description:   mt_parse_info_table.py\n\
+#        Version:   1.0\n\
+#           Time:   2022/05/23 11:51:11\n\
+#  Last Modified:   2022/11/08 11:14:35\n\
+#        Contact:   hi@arcsona.cn\n\
+#        License:   GNU General Public License v3.0\n\
+#\n\
+##########################################################\n\
+\n\
 \npython3   mt_parse_info_table.py\n\
 解析网页表格里的注释信息,生成gene.annotation.info2\n\
+Function:\n\
+1.常规使用\n\
+1.1 -i [gene.info] -o [gene.annotation.info2] -n [2/5]\n\
 \n\
--i [gene.info] -o [gene.annotation.info2] -n [2/5]\n\
-\n\
+##########################################################\n\
 Path: E:\OneDrive\jshy信息部\Script\mitochondrion\annotation\mt_parse_info_table.py\n\
 Path: /share/nas1/yuj/script/mitochondrion/annotation/mt_parse_info_table.py\n\
-Version: V1.0'
+Version: 1.0\n\
+##########################################################\n\
+'
 )
 optional = parser.add_argument_group('可选项')
 required = parser.add_argument_group('必选项')
@@ -41,9 +65,17 @@ optional.add_argument(
     '-o', '--outfile', metavar='[outfile]', type=str, default='F:\\4313\\nano\\gene.annotation.info', required=False)
 optional.add_argument(
     '-n', '--tablenumber', metavar='[codon table default2]', type=int, default=2, required=False)
-
+optional.add_argument('-info', help='更新日志,使用时-info',
+                      action='store_true', required=False)
 optional.add_argument('-h', '--help', action='help', help='[帮助信息]')
 args = parser.parse_args()
+
+if args.info:
+    print('\n更新日志:')
+    print('\t20221108 vim生成的gene.info文件最后一行为空，要跳出')
+    print('\n')
+    sys.exit(0)
+
 
 # ##################################################################################名字映射
 
@@ -240,6 +272,8 @@ def tbl_format_parse(in_path=args.infile, out_path=args.outfile, table=args.tabl
             # 终止程序
             sys.exit(0)  # 0：正常退出 1：异常退出
         for line in in_handle:
+            if line.strip() == '':  # 20221108 vim生成的gene.info文件最后一行为空，要跳出
+                break
             count += 1
             """分割赋值"""
             line_content = line.split('\t')
