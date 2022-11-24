@@ -69,6 +69,7 @@ if args.info:
     print('\n更新日志:')
     print('\t20220906 修改基因组的类型判断,若不符合则退出')
     print('\t20221012 修改基因名字映射函数,使其能够识别CO1样式')
+    print('\t20221111 增加gbk里基因名是全称(如ATPase)时的处理')
     print('\n')
     sys.exit(0)
 
@@ -262,6 +263,8 @@ def gene_name_standardization_2(gene_name):  # 格式化基因名字,可重复�
     # 基因名字前处理1 # 20220825 gbk文件里 基因名是罗马数字，因此需要先处理
     gene_name = gene_name.replace('III', '3').replace(
         'II', '2').replace('I', '1')
+    # 基因名字前处理2 # 20221111 gbk文件里 基因名是全称 如'ATPase '
+    gene_name = gene_name.replace('ATPase ', 'ATP').replace('Cyt ', 'CYT')
 
     # ------------------名字映射
     # 名字样式大写的情况
@@ -289,7 +292,7 @@ def gene_name_standardization_2(gene_name):  # 格式化基因名字,可重复�
                 else:
                     i += 1
             if i >= 13:
-                print('all_three_methods_failed！')
+                print('all_three_methods_failed!')
                 print(gene_name, 'WARNING!Please check!')
                 name_flag = 1
     return gene_name, name_flag
