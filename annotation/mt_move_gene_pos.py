@@ -28,36 +28,14 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser(
-    add_help=False, usage='\n\
-\n\
-##########################################################\n\
-#\n\
-#       Filename:   mt_move_gene_pos.py\n\
-#         Author:   yujie\n\
-#    Description:   mt_move_gene_pos.py\n\
-#        Version:   2.0\n\
-#           Time:   2022/06/07 09:38:21\n\
-#  Last Modified:   2022/11/24 17:14:32\n\
-#        Contact:   hi@arcsona.cn\n\
-#        License:   GNU General Public License v3.0\n\
-#\n\
-##########################################################\n\
-\n\
-\npython3   mt_move_gene_pos.py\n\
-功能：线粒体基因平移位置/fasta调整起点\n\
-1.调整fasta起点,输入 -fa -n2/-s \n\
+    add_help=False, usage='python3   mt_move_gene_pos.py\n\
+1.调整fasta起点,输入 -fa -n2/-s [-o 可选]\n\
 \tn2:输入正值,将末尾(n2)bp的碱基挪到开头\n\
 \ts:输入正值,将开头(s-1)bp的碱基挪到末尾\n\
 2.对ann.info2仅排序,输入 -i -o \n\
 3.对ann.info2平移+排序\n\
 \t不分段操作,输入 -i -o -n2 \n\
 \t分段操作,输入 -i -o -ln -n1 -n2 -m\n\
-\n\
-##########################################################\n\
-Path: E:\OneDrive\jshy信息部\Script\mitochondrion\annotation\mt_move_gene_pos.py\n\
-Path: /share/nas1/yuj/script/mitochondrion/annotation/mt_move_gene_pos.py\n\
-Version: 2.0\n\
-##########################################################\n\
 '
 )
 optional = parser.add_argument_group('可选项')
@@ -91,6 +69,7 @@ if args.info:
     print("\t20220607\t增加了排序函数")
     print("\t20220607\t考虑跨首尾基因排序到开头,其自己的计数")
     print("\t20221124\t大幅修改代码运行逻辑,更新使用方法")
+    print("\t20221214\t自定义调整后fasta输出路径")
     print("\n")
     sys.exit(0)
 
@@ -228,10 +207,14 @@ def correcting_fasta(fasta_file, number, start):
     for i in tmp_list:
         s += i
     new_seq = last+s
-    with open(os.path.join(indir_path, file_prefix+'.fsa2'), 'w') as fo_handle:
+    if args.outinfo != '':
+        fo_path = args.outinfo
+    else:
+        fo_path = os.path.join(indir_path, file_prefix+'.fsa2')
+    with open(fo_path, 'w') as fo_handle:
         fo_handle.write(seq_id)
         fo_handle.write(new_seq+'\n')
-    return os.path.join(indir_path, file_prefix+'.fsa2')
+    return fo_path
 
 
 if args.infasta != '':  # fasta文件 仅考虑把末尾n2 bp碱基挪到开头
