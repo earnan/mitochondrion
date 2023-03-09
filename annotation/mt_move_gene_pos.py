@@ -38,8 +38,8 @@ parser = argparse.ArgumentParser(
 \t分段操作,输入 -i -o -ln -n1 -n2 -m\n\
 '
 )
-optional = parser.add_argument_group('可选项')
-required = parser.add_argument_group('必选项')
+optional = parser.add_argument_group('optional')
+required = parser.add_argument_group('required')
 optional.add_argument(
     '-i', '--ininfo', metavar='[file]', type=str, help='要修改的注释,使用时需输入', default='', required=False)
 optional.add_argument(
@@ -56,9 +56,11 @@ optional.add_argument(
     '-s', '--start', metavar='[int]', type=int, help='现有序列的起点,默认0,使用时需输入', default=0,  required=False)
 optional.add_argument(
     '-m', '--maxlen', metavar='[len(fasta)]', type=int, help='基因组长度,默认0,使用时需输入', default=0,  required=False)
-optional.add_argument('-info', help='更新日志,使用时-info',
+
+optional.add_argument('-info', '--info', help='show update log and exit',
                       action='store_true', required=False)
-optional.add_argument('-h', '--help', action='help', help='帮助信息')
+optional.add_argument('-h', '--help', action='help',
+                      help='show this help message and exit')
 args = parser.parse_args()
 
 if args.info:
@@ -267,4 +269,4 @@ if args.ininfo != '' and args.outinfo != '':  # info 排序注释
             content = tmp_handle.read()
             outinfo_handle.write(content)
     elif trn_flag == False:
-        print('Please check!')
+        print('Please check trna!')

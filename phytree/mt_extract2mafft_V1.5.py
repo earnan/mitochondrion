@@ -5,7 +5,7 @@
 #       Filename:   mt_extract2mafft.py
 #         Author:   yujie
 #    Description:   mt_extract2mafft.py
-#        Version:   1.5
+#        Version:   2.0
 #           Time:   2022/03/28 17:00:58
 #  Last Modified:   2022/03/28 17:00:58
 #        Contact:   hi@arcsona.cn
@@ -130,22 +130,7 @@ if __name__ == '__main__':
                     gene = j.split()[-1].split('=')[-1].rstrip(']')
                     gene = gene_name_standardization(gene)
                     dict_gene_id_seq[gene] += format_fasta(j, dict_seq[j], 70)
-                    # ic(j)
-                    """#利用python本身的index函数,不通用,舍去
-                    if gene in all_gene_list_upper:
-                        # ic()
-                        n = all_gene_list_upper.index(gene)
-                        ic(n, gene)
-                        dict_gene_id_seq[gene].append([j, dict_seq[j]])
-                    elif gene in all_gene_list_lower:
-                        n = all_gene_list_lower.index(gene)
-                        gene = all_gene_list_upper[n]
-                        ic(n, gene)
-                        dict_gene_id_seq[gene].append([j, dict_seq[j]])
-                    else:
-                        print('warning {}'.format(gene))
-                        list_warning.append(gene)
-                    """
+
         all_gene_list_upper2 = ['COX1', 'ND1', 'ND2', 'ND4L', 'COX2',
                                 'CYTB', 'ATP8', 'ND4', 'ATP6', 'ND3', 'ND5', 'ND6', 'COX3']
         all_gene_list_lower2 = ['cox1', 'nad1', 'nad2', 'nad4L', 'cox2',
